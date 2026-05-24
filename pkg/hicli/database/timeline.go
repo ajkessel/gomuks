@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"sync"
 
 	"go.mau.fi/util/dbutil"
@@ -41,6 +42,22 @@ const (
 		JOIN event ON event.rowid = timeline.event_rowid
 		WHERE timeline.room_id = $1 AND ($2 = 0 OR timeline.rowid < $2)
 		ORDER BY timeline.rowid DESC
+		LIMIT $3
+	`
+	getEventTimelineRowIDQuery = `
+		SELECT timeline.rowid FROM timeline
+		JOIN event ON event.rowid = timeline.event_rowid
+		WHERE event.event_id = $1 AND timeline.room_id = $2
+	`
+	getTimelineAfterQuery = `
+		SELECT event.rowid, timeline.rowid,
+		       event.room_id, event_id, sender, type, state_key, timestamp, content, decrypted, decrypted_type,
+		       unsigned, local_content, transaction_id, redacted_by, relates_to, relation_type,
+		       megolm_session_id, decryption_error, send_error, reactions, last_edit_rowid, unread_type, sticky_duration
+		FROM timeline
+		JOIN event ON event.rowid = timeline.event_rowid
+		WHERE timeline.room_id = $1 AND timeline.rowid > $2
+		ORDER BY timeline.rowid ASC
 		LIMIT $3
 	`
 )
@@ -143,5 +160,24 @@ func (tq *TimelineQuery) Get(ctx context.Context, roomID id.RoomID, limit int, b
 
 func (tq *TimelineQuery) Has(ctx context.Context, roomID id.RoomID, eventRowID EventRowID) (exists bool, err error) {
 	err = tq.GetDB().QueryRow(ctx, checkTimelineContainsQuery, roomID, eventRowID).Scan(&exists)
+	return
+}
+
+// GetContextByEventID returns events immediately before and after a given event in the local timeline.
+// Returns sql.ErrNoRows if the event is not in the local timeline.
+func (tq *TimelineQuery) GetContextByEventID(ctx context.Context, roomID id.RoomID, eventID id.EventID, limit int) (before, after []*Event, err error) {
+	var timelineRowID TimelineRowID
+	err = tq.GetDB().QueryRow(ctx, getEventTimelineRowIDQuery, eventID, roomID).Scan(&timelineRowID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("event not in local timeline")
+		}
+		return
+	}
+	before, err = tq.QueryMany(ctx, getTimelineQuery, roomID, timelineRowID, limit)
+	if err != nil {
+		return
+	}
+	after, err = tq.QueryMany(ctx, getTimelineAfterQuery, roomID, timelineRowID, limit)
 	return
 }

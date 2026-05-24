@@ -205,6 +205,7 @@ func (gmx *Gomuks) StartClientWithoutExit(ctx context.Context) int {
 		[]byte("meow"),
 		gmx.HandleEvent,
 	)
+	gmx.Client.BackfillHistoryDays = gmx.Config.Matrix.BackfillHistoryDays
 	gmx.Client.Client.SyncPresence = ptr.Val(gmx.Config.Matrix.SetPresence)
 	gmx.Client.LogoutFunc = gmx.Logout
 	httpClient := gmx.Client.Client.Client

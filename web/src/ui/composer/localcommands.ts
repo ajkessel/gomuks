@@ -68,6 +68,13 @@ const commandHandlers: { [K in CommandName]?: CommandCallback } = {
 	devtools: ({ roomCtx }) => {
 		window.openModal(modals.roomStateExplorer(roomCtx.store))
 	},
+	search: ({ mainScreen }, { query }) => {
+		mainScreen.setRightPanel({
+			type: "search",
+			initialQuery: typeof query === "string" ? query : undefined,
+			initialRoomScoped: true,
+		})
+	},
 }
 
 type BotArgMap = Record<string, BotArgumentValue>

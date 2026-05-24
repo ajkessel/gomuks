@@ -152,6 +152,17 @@ type GetMentionsParams struct {
 	RoomID id.RoomID `json:"room_id,omitempty"`
 }
 
+type SearchMessagesParams struct {
+	// The full-text search query string (FTS5 MATCH syntax).
+	Query string `json:"query"`
+	// Optional room ID to restrict search to a single room.
+	RoomID id.RoomID `json:"room_id,omitempty"`
+	// Maximum number of results to return.
+	Limit int `json:"limit"`
+	// Offset for pagination.
+	Offset int `json:"offset"`
+}
+
 type GetRelatedEventsParams struct {
 	RoomID  id.RoomID  `json:"room_id"`
 	EventID id.EventID `json:"event_id"`

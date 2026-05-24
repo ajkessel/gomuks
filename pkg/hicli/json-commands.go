@@ -91,6 +91,8 @@ func (h *HiClient) handleJSONCommand(ctx context.Context, req *JSONCommand) (any
 		return jsoncmd.PaginateManual.RunCtx(ctx, req.Data, h.API.PaginateManual)
 	case jsoncmd.ReqGetMentions:
 		return jsoncmd.GetMentions.RunCtx(ctx, req.Data, h.API.GetMentions)
+	case jsoncmd.ReqSearchMessages:
+		return jsoncmd.SearchMessages.RunCtx(ctx, req.Data, h.API.SearchMessages)
 	case jsoncmd.ReqGetRoomState:
 		return jsoncmd.GetRoomState.RunCtx(ctx, req.Data, h.API.GetRoomState)
 	case jsoncmd.ReqGetSpecificRoomState:
@@ -312,6 +314,10 @@ func (h *JSONAPI) PaginateManual(ctx context.Context, params *jsoncmd.PaginateMa
 
 func (h *JSONAPI) GetMentions(ctx context.Context, params *jsoncmd.GetMentionsParams) ([]*database.Event, error) {
 	return nonNilArray(h.HiClient.GetMentions(ctx, params.MaxTimestamp.Time, params.Type, params.Limit, params.RoomID))
+}
+
+func (h *JSONAPI) SearchMessages(ctx context.Context, params *jsoncmd.SearchMessagesParams) ([]*database.Event, error) {
+	return nonNilArray(h.HiClient.SearchMessages(ctx, params.Query, params.RoomID, params.Limit, params.Offset))
 }
 
 func (h *JSONAPI) GetRoomSummary(ctx context.Context, params *jsoncmd.GetRoomSummaryParams) (*mautrix.RespRoomSummary, error) {

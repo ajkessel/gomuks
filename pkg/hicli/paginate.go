@@ -10,8 +10,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
+	"strings"
 	"time"
+	"strconv"
 
 	"github.com/rs/zerolog"
 	"go.mau.fi/util/ptr"
@@ -488,6 +491,9 @@ func (h *HiClient) PaginateServer(ctx context.Context, roomID id.RoomID, limit i
 }
 
 func (h *HiClient) GetEventContext(ctx context.Context, roomID id.RoomID, eventID id.EventID, limit int) (*jsoncmd.EventContextResponse, error) {
+	if resp, err := h.getLocalEventContext(ctx, roomID, eventID, limit); err == nil {
+		return resp, nil
+	}
 	filter := &mautrix.FilterPart{LazyLoadMembers: true}
 	resp, err := h.Client.Context(ctx, roomID, eventID, filter, limit)
 	if err != nil {
@@ -524,6 +530,32 @@ func (h *HiClient) GetEventContext(ctx context.Context, roomID id.RoomID, eventI
 		h.WakeupRequestQueue()
 	}
 	return wrappedResp, nil
+}
+
+func (h *HiClient) getLocalEventContext(ctx context.Context, roomID id.RoomID, eventID id.EventID, limit int) (*jsoncmd.EventContextResponse, error) {
+	evt, err := h.DB.Event.GetByID(ctx, roomID, eventID)
+	if err != nil || evt == nil {
+		return nil, fmt.Errorf("event not found locally")
+	}
+	before, after, err := h.DB.Timeline.GetContextByEventID(ctx, roomID, eventID, limit)
+	if err != nil {
+		return nil, err
+	}
+	h.ReprocessExistingEvent(ctx, evt)
+	resp := &jsoncmd.EventContextResponse{
+		Before: make([]*database.Event, len(before)),
+		After:  make([]*database.Event, len(after)),
+		Event:  evt,
+	}
+	for i, e := range before {
+		h.ReprocessExistingEvent(ctx, e)
+		resp.Before[i] = e
+	}
+	for i, e := range after {
+		h.ReprocessExistingEvent(ctx, e)
+		resp.After[i] = e
+	}
+	return resp, nil
 }
 
 func (h *HiClient) PaginateManual(
@@ -579,6 +611,84 @@ func (h *HiClient) PaginateManual(
 
 func (h *HiClient) GetMentions(ctx context.Context, maxTS time.Time, unreadType database.UnreadType, limit int, roomID id.RoomID) ([]*database.Event, error) {
 	evts, err := h.DB.Event.GetMentions(ctx, maxTS, unreadType, limit, roomID)
+	for _, evt := range evts {
+		h.ReprocessExistingEvent(ctx, evt)
+	}
+	return evts, err
+}
+
+var fromFilterRegex = regexp.MustCompile(`(?i)\bfrom:(?:"([^"]+)"|(\S+))`)
+var dateFilterRegex = regexp.MustCompile(`(?i)\bdate:(\d{1,2}/\d{1,2}/\d{2,4}(?:-(?:\d{1,2}/\d{1,2}/\d{2,4})?)?|-\d{1,2}/\d{1,2}/\d{2,4})`)
+
+func parseDateValue(s string) (time.Time, error) {
+	fields := strings.SplitN(s, "/", 3)
+	if len(fields) != 3 {
+		return time.Time{}, fmt.Errorf("invalid date %q", s)
+	}
+	month, err1 := strconv.Atoi(fields[0])
+	day, err2 := strconv.Atoi(fields[1])
+	year, err3 := strconv.Atoi(fields[2])
+	if err1 != nil || err2 != nil || err3 != nil {
+		return time.Time{}, fmt.Errorf("invalid date %q", s)
+	}
+	if year < 100 {
+		year += 2000
+	}
+	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local), nil
+}
+
+func parseDateSpec(spec string) (startMs, endMs int64, err error) {
+	parts := strings.SplitN(spec, "-", 2)
+	var start, end time.Time
+	if parts[0] != "" {
+		if start, err = parseDateValue(parts[0]); err != nil {
+			return
+		}
+	}
+	if len(parts) == 2 {
+		if parts[1] != "" {
+			if end, err = parseDateValue(parts[1]); err != nil {
+				return
+			}
+		}
+	} else {
+		end = start
+	}
+	if !start.IsZero() {
+		startMs = start.UnixMilli()
+	}
+	if !end.IsZero() {
+		endMs = time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 999000000, time.Local).UnixMilli()
+	}
+	return
+}
+
+func parseSearchQuery(raw string) (ftsQuery, senderName string, startTime, endTime int64, err error) {
+	if m := fromFilterRegex.FindStringSubmatchIndex(raw); m != nil {
+		if m[2] != -1 {
+			senderName = strings.TrimSpace(raw[m[2]:m[3]])
+		} else {
+			senderName = strings.TrimSpace(raw[m[4]:m[5]])
+		}
+		raw = raw[:m[0]] + raw[m[1]:]
+	}
+	if m := dateFilterRegex.FindStringSubmatchIndex(raw); m != nil {
+		startTime, endTime, err = parseDateSpec(raw[m[2]:m[3]])
+		if err != nil {
+			return
+		}
+		raw = raw[:m[0]] + raw[m[1]:]
+	}
+	ftsQuery = strings.TrimSpace(raw)
+	return
+}
+
+func (h *HiClient) SearchMessages(ctx context.Context, query string, roomID id.RoomID, limit, offset int) ([]*database.Event, error) {
+	ftsQuery, senderName, startTime, endTime, err := parseSearchQuery(query)
+	if err != nil {
+		return nil, err
+	}
+	evts, err := h.DB.Event.Search(ctx, ftsQuery, senderName, roomID, startTime, endTime, limit, offset)
 	for _, evt := range evts {
 		h.ReprocessExistingEvent(ctx, evt)
 	}

@@ -26,6 +26,7 @@ import PeopleIcon from "@/icons/group.svg?react"
 import MoreIcon from "@/icons/more.svg?react"
 import NotificationsIcon from "@/icons/notifications.svg?react"
 import PinIcon from "@/icons/pin.svg?react"
+import SearchIcon from "@/icons/search.svg?react"
 import SettingsIcon from "@/icons/settings.svg?react"
 import WidgetIcon from "@/icons/widgets.svg?react"
 import "./RoomViewHeader.css"
@@ -44,9 +45,15 @@ const RoomViewHeader = ({ room }: RoomViewHeaderProps) => {
 	const openRoomStateExplorer = () => {
 		openNestableModal(modals.roomStateExplorer(room))
 	}
-	const buttonCount = 5
+	const buttonCount = 6
 	const makeButtons = (titles?: boolean)  => {
 		return <>
+			<button
+				data-target-panel="search"
+				data-close-nestable-modal={titles}
+				onClick={mainScreen.clickRightPanelOpener}
+				title="Search Messages"
+			><SearchIcon/>{titles && "Search Messages"}</button>
 			<button
 				data-target-panel="pinned-messages"
 				data-close-nestable-modal={titles}

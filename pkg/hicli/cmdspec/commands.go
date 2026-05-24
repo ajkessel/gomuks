@@ -32,6 +32,7 @@ const (
 	RawState       = "rawstate"
 	DiscardSession = "discardsession"
 	Devtools       = "devtools"
+	Search         = "search"
 	Meow           = "meow"
 	AddAlias       = "alias add"
 	DelAlias       = "alias del"
@@ -206,6 +207,15 @@ var CommandDefinitions = []*cmdschema.EventContent{{
 }, {
 	Command:     Devtools,
 	Description: event.MakeExtensibleText("Open the room state explorer"),
+}, {
+	Command:     Search,
+	Description: event.MakeExtensibleText("Search messages in the current or all rooms; use from:<name> to filter by sender and date:<date range> to filter by date"),
+	Parameters: []*cmdschema.Parameter{{
+		Key:         "query",
+		Schema:      cmdschema.PrimitiveTypeString.Schema(),
+		Description: event.MakeExtensibleText("Search query"),
+	}},
+	TailParam: "query",
 }, {
 	Command:     AddAlias,
 	Description: event.MakeExtensibleText("Add a room alias to the current room. Does not update the canonical alias event."),

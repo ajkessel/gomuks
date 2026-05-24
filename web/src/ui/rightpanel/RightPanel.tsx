@@ -24,6 +24,7 @@ import LazyWidget from "../widget/LazyWidget.tsx"
 import MemberList from "./MemberList.tsx"
 import Notifications from "./Notifications.tsx"
 import PinnedMessages from "./PinnedMessages.tsx"
+import SearchPanel from "./SearchPanel.tsx"
 import UserInfo from "./UserInfo.tsx"
 import WidgetList from "./WidgetList.tsx"
 import BackIcon from "@/icons/back.svg?react"
@@ -31,10 +32,16 @@ import CloseIcon from "@/icons/close.svg?react"
 import "./RightPanel.css"
 
 export type RightPanelType =
-	"pinned-messages" | "notifications" | "members" | "widgets" | "widget" | "user" | "thread" | "element-call"
+	"pinned-messages" | "notifications" | "members" | "widgets" | "widget" | "user" | "thread" | "element-call" | "search"
 
 interface RightPanelSimpleProps {
 	type: "pinned-messages" | "notifications" | "members" | "widgets" | "element-call"
+}
+
+interface RightPanelSearchProps {
+	type: "search"
+	initialQuery?: string
+	initialRoomScoped?: boolean
 }
 
 interface RightPanelWidgetProps {
@@ -57,6 +64,7 @@ export type RightPanelProps =
 	| RightPanelWidgetProps
 	| RightPanelThreadProps
 	| RightPanelSimpleProps
+	| RightPanelSearchProps
 
 function getTitle(props: RightPanelProps): string {
 	switch (props.type) {
@@ -76,6 +84,8 @@ function getTitle(props: RightPanelProps): string {
 		return "User Info"
 	case "thread":
 		return "Thread"
+	case "search":
+		return "Search Messages"
 	}
 }
 
@@ -97,6 +107,8 @@ function renderRightPanelContent(props: RightPanelProps, mainScreen: MainScreenC
 		return <UserInfo userID={props.userID} />
 	case "thread":
 		return <ThreadView key={props.threadRoot} threadRoot={props.threadRoot} />
+	case "search":
+		return <SearchPanel initialQuery={props.initialQuery} initialRoomScoped={props.initialRoomScoped} />
 	}
 }
 

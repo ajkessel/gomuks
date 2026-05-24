@@ -320,6 +320,15 @@ export default abstract class RPCClient {
 		return this.request("get_mentions", { max_timestamp, type, limit, room_id })
 	}
 
+	searchMessages(
+		query: string,
+		limit: number = 50,
+		offset: number = 0,
+		room_id: RoomID | undefined = undefined,
+	): Promise<RawDBEvent[]> {
+		return this.request("search_messages", { query, limit, offset, room_id })
+	}
+
 	getEventContext(room_id: RoomID, event_id: EventID, limit: number = 20): Promise<EventContextResponse> {
 		return this.request("get_event_context", { room_id, event_id, limit })
 	}

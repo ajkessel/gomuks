@@ -43,8 +43,9 @@ type Config struct {
 }
 
 type MatrixConfig struct {
-	DisableHTTP2 bool            `yaml:"disable_http2"`
-	SetPresence  *event.Presence `yaml:"set_presence"`
+	DisableHTTP2        bool            `yaml:"disable_http2"`
+	SetPresence         *event.Presence `yaml:"set_presence"`
+	BackfillHistoryDays *int            `yaml:"backfill_history_days,omitempty"`
 }
 
 type PushConfig struct {

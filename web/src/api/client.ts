@@ -396,6 +396,21 @@ export default class Client {
 		return output
 	}
 
+	async searchMessages({ query, roomID, limit = 50, offset = 0 }: {
+		query: string, roomID?: RoomID, limit?: number, offset?: number
+	}) {
+		const resp = await this.rpc.searchMessages(query, limit, offset, roomID)
+		const output = []
+		for (const evt of resp) {
+			const room = this.store.rooms.get(evt.room_id)
+			if (!room) {
+				continue
+			}
+			output.push(room.getOrApplyEvent(evt))
+		}
+		return output
+	}
+
 	async pinMessage(room: RoomStateStore, evtID: EventID, wantPinned: boolean) {
 		const pinnedEvents = room.getPinnedEvents()
 		const currentlyPinned = pinnedEvents.includes(evtID)

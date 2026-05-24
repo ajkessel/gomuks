@@ -180,6 +180,10 @@ func (h *HiClient) postProcessSyncResponse(ctx context.Context, resp *mautrix.Re
 			tp.ResponseHeaderTimeout = 60 * time.Second
 		}
 		h.Client.Client.Timeout = 180 * time.Second
+		if since != "" {
+			// Non-initial first sync (resuming): signal backfill now since there's no room-list dispatch below.
+			h.backfillOnce.Do(func() { close(h.backfillReady) })
+		}
 	}
 	if since == "" {
 		zerolog.Ctx(ctx).Info().Msg("Init sync complete, dispatching chunked room list to clients")
@@ -189,6 +193,7 @@ func (h *HiClient) postProcessSyncResponse(ctx context.Context, resp *mautrix.Re
 		}
 		zerolog.Ctx(ctx).Debug().Msg("Finished sending chunked room list to clients after init sync")
 		h.EventHandler(&jsoncmd.InitComplete{})
+		h.backfillOnce.Do(func() { close(h.backfillReady) })
 
 		// Don't dispatch the normal sync event
 		return

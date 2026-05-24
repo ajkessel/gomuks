@@ -21,6 +21,7 @@ export type CommandName =
 	| "rawstate"
 	| "discardsession"
 	| "devtools"
+	| "search"
 	| "alias add"
 	| "alias del"
 	| "converttodm"

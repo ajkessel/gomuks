@@ -76,6 +76,10 @@ type HiClient struct {
 	paginationInterrupterLock sync.Mutex
 	paginationInterrupter     map[id.RoomID]context.CancelCauseFunc
 
+	BackfillHistoryDays *int
+	backfillOnce        sync.Once
+	backfillReady       chan struct{}
+
 	sendLock     map[id.RoomID]*sync.Mutex
 	sendLockLock sync.Mutex
 
@@ -120,6 +124,7 @@ func New(rawDB, cryptoDB *dbutil.Database, log zerolog.Logger, pickleKey []byte,
 		jsonRequests:          make(map[int64]context.CancelCauseFunc),
 		paginationInterrupter: make(map[id.RoomID]context.CancelCauseFunc),
 		sendLock:              make(map[id.RoomID]*sync.Mutex),
+		backfillReady:         make(chan struct{}),
 
 		EventHandler: evtHandler,
 	}
@@ -320,6 +325,9 @@ func (h *HiClient) Sync() {
 	h.stopSync.Store(&cancel)
 	go h.RunRequestQueue(h.Log.WithContext(ctx))
 	go h.LoadPushRules(h.Log.WithContext(ctx))
+	if h.BackfillHistoryDays != nil {
+		go h.RunBackfillQueue(h.Log.WithContext(ctx))
+	}
 	ctx = log.WithContext(ctx)
 	log.Info().Msg("Starting syncing")
 	err := h.Client.SyncWithContext(ctx)

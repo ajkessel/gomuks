@@ -58,6 +58,36 @@ const (
 		ORDER BY timestamp DESC
 		LIMIT $3
 	`
+	searchEventsQuery = getEventBaseQuery + `
+		JOIN event_fts ON event.rowid = event_fts.rowid
+		WHERE event_fts MATCH $1
+		AND ($2 = '' OR event.room_id = $2)
+		AND ($3 = '' OR event.sender IN (
+			SELECT DISTINCT state_key FROM event AS me
+			WHERE me.type = 'm.room.member' AND me.state_key IS NOT NULL
+			AND (lower(me.state_key) LIKE lower('%'||$3||'%')
+			     OR lower(json_extract(me.content, '$.displayname')) LIKE lower('%'||$3||'%'))
+		))
+		AND ($4 = 0 OR event.timestamp >= $4)
+		AND ($5 = 0 OR event.timestamp <= $5)
+		ORDER BY event.timestamp DESC
+		LIMIT $6 OFFSET $7
+	`
+	searchEventsNoFTSQuery = getEventBaseQuery + `
+		WHERE event.redacted_by IS NULL
+		AND json_extract(COALESCE(event.decrypted, event.content), '$.body') IS NOT NULL
+		AND ($1 = '' OR event.room_id = $1)
+		AND ($2 = '' OR event.sender IN (
+			SELECT DISTINCT state_key FROM event AS me
+			WHERE me.type = 'm.room.member' AND me.state_key IS NOT NULL
+			AND (lower(me.state_key) LIKE lower('%'||$2||'%')
+			     OR lower(json_extract(me.content, '$.displayname')) LIKE lower('%'||$2||'%'))
+		))
+		AND ($3 = 0 OR event.timestamp >= $3)
+		AND ($4 = 0 OR event.timestamp <= $4)
+		ORDER BY event.timestamp DESC
+		LIMIT $5 OFFSET $6
+	`
 	insertEventBaseQuery = `
 		INSERT INTO event (
 			room_id, event_id, sender, type, state_key, timestamp, content, decrypted, decrypted_type,
@@ -147,6 +177,16 @@ func (eq *EventQuery) GetMentions(ctx context.Context, ts time.Time, unreadType 
 		return eq.QueryMany(ctx, getMentionEventsInRoomQuery, ts.UnixMilli(), unreadType, limit, roomID)
 	}
 	return eq.QueryMany(ctx, getMentionEventsQuery, ts.UnixMilli(), unreadType, limit)
+}
+
+func (eq *EventQuery) Search(ctx context.Context, ftsQuery, senderName string, roomID id.RoomID, startTime, endTime int64, limit, offset int) ([]*Event, error) {
+	if ftsQuery == "" && senderName == "" && startTime == 0 && endTime == 0 {
+		return nil, nil
+	}
+	if ftsQuery != "" {
+		return eq.QueryMany(ctx, searchEventsQuery, normalizeFTS(ftsQuery), string(roomID), senderName, startTime, endTime, limit, offset)
+	}
+	return eq.QueryMany(ctx, searchEventsNoFTSQuery, string(roomID), senderName, startTime, endTime, limit, offset)
 }
 
 func (eq *EventQuery) GetByRowIDs(ctx context.Context, rowIDs ...EventRowID) ([]*Event, error) {

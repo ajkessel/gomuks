@@ -51,6 +51,7 @@ const (
 	ReqGetEventContext          Name = "get_event_context"
 	ReqPaginateManual           Name = "paginate_manual"
 	ReqGetMentions              Name = "get_mentions"
+	ReqSearchMessages           Name = "search_messages"
 	ReqGetRelatedEvents         Name = "get_related_events"
 	ReqGetStickyEvents          Name = "get_sticky_events"
 	ReqGetRoomState             Name = "get_room_state"
@@ -169,6 +170,9 @@ var (
 	// The result is sorted by timestamp in descending order. Sorting by timestamp means the sender could
 	// have faked it, but there's no other cross-room event ordering in Matrix.
 	GetMentions = &CommandSpec[*GetMentionsParams, []*database.Event]{Name: ReqGetMentions}
+	// SearchMessages performs a full-text search over locally stored messages using the FTS5 index.
+	// This will not call the homeserver. Results are sorted by relevance rank.
+	SearchMessages = &CommandSpec[*SearchMessagesParams, []*database.Event]{Name: ReqSearchMessages}
 	// GetRelatedEvents returns events related to a given event from the database (e.g. reactions,
 	// edits, replies depending on relation type). This will not call the homeserver.
 	GetRelatedEvents = &CommandSpec[*GetRelatedEventsParams, []*database.Event]{Name: ReqGetRelatedEvents}
@@ -305,6 +309,7 @@ var AllNames = []Name{
 	ReqGetEventContext,
 	ReqPaginateManual,
 	ReqGetMentions,
+	ReqSearchMessages,
 	ReqGetRelatedEvents,
 	ReqGetRoomState,
 	ReqGetSpecificRoomState,
