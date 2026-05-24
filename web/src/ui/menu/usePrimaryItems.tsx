@@ -41,6 +41,7 @@ export const usePrimaryItems = (
 	isFixed: boolean,
 	style?: CSSProperties,
 	setForceOpen?: (forceOpen: boolean) => void,
+	afterReply?: () => void,
 ) => {
 	const names = !isHover && !isFixed
 	const closeModal = !isHover ? use(ModalCloseContext) : noop
@@ -49,10 +50,12 @@ export const usePrimaryItems = (
 	const onClickReply = () => {
 		roomCtx.setReplyTo(evt.event_id)
 		closeModal()
+		afterReply?.()
 	}
 	const onClickThread = () => {
 		roomCtx.setReplyToAsThread(evt.event_id)
 		closeModal()
+		afterReply?.()
 	}
 	const onClickReact = (mevt: React.MouseEvent<HTMLButtonElement>) => {
 		const bodyStyle = getComputedStyle(document.body)

@@ -26,6 +26,7 @@ type Conn struct {
 	cptr js.Value
 
 	closed atomic.Bool
+	udfs   []js.Func
 
 	txlock  string
 	sahpool bool
@@ -58,6 +59,10 @@ func (c *Conn) Close() error {
 	if rc != SQLITE_OK {
 		return c.d.MakeError(c, "sqlite3_close_v2", rc)
 	}
+	for _, fn := range c.udfs {
+		fn.Release()
+	}
+	c.udfs = nil
 	return nil
 }
 
@@ -67,6 +72,9 @@ func (c *Conn) connectHook(ctx context.Context) (dc driver.Conn, err error) {
 			_ = c.Close()
 		}
 	}()
+	if err = c.registerFunctions(); err != nil {
+		return
+	}
 	_, err = c.ExecContext(ctx, "PRAGMA foreign_keys = ON", nil)
 	if err != nil {
 		return

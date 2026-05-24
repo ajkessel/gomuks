@@ -24,14 +24,15 @@ import CloseIcon from "@/icons/close.svg?react"
 interface BaseEventMenuProps {
 	evt: MemDBEvent
 	roomCtx: RoomContextData
+	afterReply?: () => void
 }
 
 interface EventHoverMenuProps extends BaseEventMenuProps {
 	setForceOpen: (forceOpen: boolean) => void
 }
 
-export const EventHoverMenu = ({ evt, roomCtx, setForceOpen }: EventHoverMenuProps) => {
-	const elements = usePrimaryItems(use(ClientContext)!, roomCtx, evt, true, false, undefined, setForceOpen)
+export const EventHoverMenu = ({ evt, roomCtx, setForceOpen, afterReply }: EventHoverMenuProps) => {
+	const elements = usePrimaryItems(use(ClientContext)!, roomCtx, evt, true, false, undefined, setForceOpen, afterReply)
 	return <div className="event-hover-menu">{elements}</div>
 }
 
@@ -44,9 +45,9 @@ export const EventExtraMenu = ({ evt, roomCtx, style }: EventContextMenuProps) =
 	return <div style={style} className="context-menu event-context-menu extra">{elements}</div>
 }
 
-export const EventFullMenu = ({ evt, roomCtx, style }: EventContextMenuProps) => {
+export const EventFullMenu = ({ evt, roomCtx, style, afterReply }: EventContextMenuProps) => {
 	const client = use(ClientContext)!
-	const primary = usePrimaryItems(client, roomCtx, evt, false, false, style, undefined)
+	const primary = usePrimaryItems(client, roomCtx, evt, false, false, style, undefined, afterReply)
 	const secondary = useSecondaryItems(client, roomCtx, evt)
 	return <div style={style} className="context-menu event-context-menu full">
 		{primary}
@@ -57,9 +58,9 @@ export const EventFullMenu = ({ evt, roomCtx, style }: EventContextMenuProps) =>
 
 EventFullMenu.height = 9 * 40
 
-export const EventFixedMenu = ({ evt, roomCtx }: BaseEventMenuProps) => {
+export const EventFixedMenu = ({ evt, roomCtx, afterReply }: BaseEventMenuProps) => {
 	const client = use(ClientContext)!
-	const primary = usePrimaryItems(client, roomCtx, evt, false, true, undefined, undefined)
+	const primary = usePrimaryItems(client, roomCtx, evt, false, true, undefined, undefined, afterReply)
 	const secondary = useSecondaryItems(client, roomCtx, evt, false)
 	const onClose = (evt: MouseEvent<HTMLButtonElement>) => {
 		evt.stopPropagation()

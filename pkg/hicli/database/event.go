@@ -73,6 +73,7 @@ const (
 	searchEventsQuery = getEventBaseQuery + `
 		JOIN event_fts ON event.rowid = event_fts.rowid
 		WHERE event_fts MATCH $1
+		AND event.redacted_by IS NULL
 		AND ($2 = '' OR event.room_id = $2)
 		AND ($3 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me

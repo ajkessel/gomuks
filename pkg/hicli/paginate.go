@@ -637,6 +637,11 @@ func (h *HiClient) GetMentions(ctx context.Context, maxTS time.Time, unreadType 
 var fromFilterRegex = regexp.MustCompile(`(?i)\bfrom:(?:"([^"]+)"|(\S+))`)
 var dateFilterRegex = regexp.MustCompile(`(?i)\b(?:date|received):(\d{1,2}/\d{1,2}/\d{2,4}-(?:\d{1,2}/\d{1,2}/\d{2,4})?|-\d{1,2}/\d{1,2}/\d{2,4}|[<>]?\d{1,2}/\d{1,2}/\d{2,4})`)
 
+const (
+	defaultSearchLimit = 50
+	maxSearchLimit     = 100
+)
+
 func parseDateValue(s string) (time.Time, error) {
 	fields := strings.SplitN(s, "/", 3)
 	if len(fields) != 3 {
@@ -706,6 +711,14 @@ func parseSearchQuery(raw string) (ftsQuery, senderName string, startTime, endTi
 }
 
 func (h *HiClient) SearchMessages(ctx context.Context, query string, roomID id.RoomID, limit, offset int) ([]*database.Event, error) {
+	if offset < 0 {
+		return nil, fmt.Errorf("search offset must not be negative")
+	}
+	if limit <= 0 {
+		limit = defaultSearchLimit
+	} else if limit > maxSearchLimit {
+		limit = maxSearchLimit
+	}
 	ftsQuery, senderName, startTime, endTime, err := parseSearchQuery(query)
 	if err != nil {
 		return nil, err

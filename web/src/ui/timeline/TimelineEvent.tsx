@@ -139,6 +139,7 @@ const TimelineEvent = ({
 			content: <EventFullMenu
 				evt={evt}
 				roomCtx={roomCtx}
+				afterReply={viewType === "context" ? window.closeNestableModal : undefined}
 				style={getModalStyleFromMouse(mouseEvt, EventFullMenu.height)}
 			/>,
 		})
@@ -179,6 +180,7 @@ const TimelineEvent = ({
 	const openEditHistory = () => {
 		openNestableModal(modals.eventEditHistory(roomCtx, evt))
 	}
+	const afterReply = viewType === "context" ? window.closeNestableModal : undefined
 	const perMessageSender = getPerMessageProfile(evt)
 	const prevPerMessageSender = getPerMessageProfile(prevEvt)
 	const memberEvt = useRoomMember(client, roomCtx.store, evt.sender)
@@ -313,10 +315,15 @@ const TimelineEvent = ({
 		{!disableMenu && (!isMobileDevice || forceContextMenuOnMobile) && <div
 			className={`context-menu-container ${forceContextMenuOpen ? "force-open" : ""}`}
 		>
-			<EventHoverMenu evt={evt} roomCtx={roomCtx} setForceOpen={setForceContextMenuOpen}/>
+			<EventHoverMenu
+				evt={evt}
+				roomCtx={roomCtx}
+				setForceOpen={setForceContextMenuOpen}
+				afterReply={afterReply}
+			/>
 		</div>}
 		{isMobileDevice && isFocused && createPortal(
-			<EventFixedMenu evt={evt} roomCtx={roomCtx} />,
+			<EventFixedMenu evt={evt} roomCtx={roomCtx} afterReply={afterReply} />,
 			document.getElementById(roomCtx.threadRoot
 				? "mobile-thread-event-menu-container" : "mobile-event-menu-container")!,
 		)}
