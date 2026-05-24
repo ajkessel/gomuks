@@ -15,6 +15,14 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
+const (
+	backfillPageSize           = 100
+	backfillContentionPause    = 5 * time.Second
+	backfillMaxContentionPause = 30 * time.Second
+	backfillInterPageDelay     = 200 * time.Millisecond
+	backfillInterRoomDelay     = 500 * time.Millisecond
+)
+
 // RunBackfillQueue runs as a background goroutine after the initial sync completes,
 // paginatingbackwards through all rooms to populate local history for search.
 func (h *HiClient) RunBackfillQueue(ctx context.Context) {
@@ -26,6 +34,8 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 
 	log := zerolog.Ctx(ctx).With().Str("action", "backfill").Logger()
 	log.Info().Int("history_days", *h.BackfillHistoryDays).Msg("Starting background history backfill")
+	h.backfillActive.Store(true)
+	defer h.backfillActive.Store(false)
 
 	var cutoff time.Time
 	if *h.BackfillHistoryDays > 0 {
@@ -49,11 +59,14 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 				return
 			default:
 			}
+			if !h.waitForBackfillThrottle(ctx, log) {
+				return
+			}
 			h.backfillRoom(ctx, room.ID, cutoff)
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(500 * time.Millisecond):
+			case <-time.After(backfillInterRoomDelay):
 			}
 		}
 		if len(rooms) < roomBatch {
@@ -69,10 +82,17 @@ func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff ti
 	log.Debug().Msg("Starting room history backfill")
 	pages := 0
 	for {
-		resp, err := h.PaginateServer(ctx, roomID, 100, false)
+		if !h.waitForBackfillThrottle(ctx, log) {
+			return
+		}
+		resp, err := h.PaginateServer(ctx, roomID, backfillPageSize, false)
 		if errors.Is(err, ErrPaginationAlreadyInProgress) {
 			log.Debug().Msg("Skipping room backfill: pagination already in progress")
 			return
+		} else if isDatabaseBusyError(err) {
+			h.pauseBackfill(backfillContentionPause)
+			log.Warn().Err(err).Dur("pause", backfillContentionPause).Msg("Database is busy during backfill, slowing down")
+			continue
 		} else if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -96,7 +116,47 @@ func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff ti
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(200 * time.Millisecond):
+		case <-time.After(backfillInterPageDelay):
+		}
+	}
+}
+
+func (h *HiClient) pauseBackfill(duration time.Duration) {
+	until := time.Now().Add(duration).UnixMilli()
+	for {
+		current := h.backfillPauseUntil.Load()
+		if current >= until || h.backfillPauseUntil.CompareAndSwap(current, until) {
+			return
+		}
+	}
+}
+
+func (h *HiClient) slowBackfillAfterDatabaseBusy(attempt int) time.Duration {
+	if !h.backfillActive.Load() {
+		return 0
+	}
+	pause := time.Duration(attempt+1) * backfillContentionPause
+	if pause > backfillMaxContentionPause {
+		pause = backfillMaxContentionPause
+	}
+	h.pauseBackfill(pause)
+	return pause
+}
+
+func (h *HiClient) waitForBackfillThrottle(ctx context.Context, log zerolog.Logger) bool {
+	for {
+		until := h.backfillPauseUntil.Load()
+		delay := time.Until(time.UnixMilli(until))
+		if delay <= 0 {
+			return true
+		}
+		log.Debug().Dur("pause", delay).Msg("Pausing background history backfill after database contention")
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return false
+		case <-timer.C:
 		}
 	}
 }

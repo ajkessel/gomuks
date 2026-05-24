@@ -48,6 +48,18 @@ const (
 		WHERE room_id = $1 AND relates_to = $2 AND ($3 = '' OR relation_type = $3)
 		ORDER BY timestamp ASC
 	`
+	getEventsBeforeQuery = getEventBaseQuery + `
+		WHERE room_id = $1
+		AND (timestamp < $2 OR (timestamp = $2 AND rowid < $3))
+		ORDER BY timestamp DESC, rowid DESC
+		LIMIT $4
+	`
+	getEventsAfterQuery = getEventBaseQuery + `
+		WHERE room_id = $1
+		AND (timestamp > $2 OR (timestamp = $2 AND rowid > $3))
+		ORDER BY timestamp ASC, rowid ASC
+		LIMIT $4
+	`
 	getMentionEventsQuery = getEventBaseQuery + `
 		WHERE timestamp <= $1 AND unread_type > 0 AND (unread_type & $2) != 0
 		ORDER BY timestamp DESC
@@ -170,6 +182,17 @@ func (eq *EventQuery) GetByRowID(ctx context.Context, rowID EventRowID) (*Event,
 
 func (eq *EventQuery) GetRelatedEvents(ctx context.Context, roomID id.RoomID, eventID id.EventID, relationType event.RelationType) ([]*Event, error) {
 	return eq.QueryMany(ctx, getRelatedEventsQuery, roomID, eventID, relationType)
+}
+
+// GetContext returns events immediately before and after the given event from the event table.
+// It is intended for locally stored events that are no longer present in the timeline cache.
+func (eq *EventQuery) GetContext(ctx context.Context, evt *Event, limit int) (before, after []*Event, err error) {
+	before, err = eq.QueryMany(ctx, getEventsBeforeQuery, evt.RoomID, evt.Timestamp.UnixMilli(), evt.RowID, limit)
+	if err != nil {
+		return
+	}
+	after, err = eq.QueryMany(ctx, getEventsAfterQuery, evt.RoomID, evt.Timestamp.UnixMilli(), evt.RowID, limit)
+	return
 }
 
 func (eq *EventQuery) GetMentions(ctx context.Context, ts time.Time, unreadType UnreadType, limit int, roomID id.RoomID) ([]*Event, error) {

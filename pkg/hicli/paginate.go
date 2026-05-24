@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 
 	"github.com/rs/zerolog"
 	"go.mau.fi/util/ptr"
@@ -539,7 +539,13 @@ func (h *HiClient) getLocalEventContext(ctx context.Context, roomID id.RoomID, e
 	}
 	before, after, err := h.DB.Timeline.GetContextByEventID(ctx, roomID, eventID, limit)
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, database.ErrEventNotInTimeline) {
+			return nil, err
+		}
+		before, after, err = h.DB.Event.GetContext(ctx, evt, limit)
+		if err != nil {
+			return nil, err
+		}
 	}
 	h.ReprocessExistingEvent(ctx, evt)
 	resp := &jsoncmd.EventContextResponse{
@@ -618,7 +624,7 @@ func (h *HiClient) GetMentions(ctx context.Context, maxTS time.Time, unreadType 
 }
 
 var fromFilterRegex = regexp.MustCompile(`(?i)\bfrom:(?:"([^"]+)"|(\S+))`)
-var dateFilterRegex = regexp.MustCompile(`(?i)\bdate:(\d{1,2}/\d{1,2}/\d{2,4}(?:-(?:\d{1,2}/\d{1,2}/\d{2,4})?)?|-\d{1,2}/\d{1,2}/\d{2,4})`)
+var dateFilterRegex = regexp.MustCompile(`(?i)\b(?:date|received):(\d{1,2}/\d{1,2}/\d{2,4}-(?:\d{1,2}/\d{1,2}/\d{2,4})?|-\d{1,2}/\d{1,2}/\d{2,4}|[<>]?\d{1,2}/\d{1,2}/\d{2,4})`)
 
 func parseDateValue(s string) (time.Time, error) {
 	fields := strings.SplitN(s, "/", 3)
@@ -638,6 +644,11 @@ func parseDateValue(s string) (time.Time, error) {
 }
 
 func parseDateSpec(spec string) (startMs, endMs int64, err error) {
+	if strings.HasPrefix(spec, ">") {
+		spec = strings.TrimPrefix(spec, ">") + "-"
+	} else if strings.HasPrefix(spec, "<") {
+		spec = "-" + strings.TrimPrefix(spec, "<")
+	}
 	parts := strings.SplitN(spec, "-", 2)
 	var start, end time.Time
 	if parts[0] != "" {

@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"sync"
 
 	"go.mau.fi/util/dbutil"
@@ -61,6 +60,8 @@ const (
 		LIMIT $3
 	`
 )
+
+var ErrEventNotInTimeline = errors.New("event not in local timeline")
 
 // A TimelineRowID is a sorting identifier for events in a room. All events shown in the timeline
 // must have a timeline row ID and must be strictly sorted by that ID.
@@ -170,7 +171,7 @@ func (tq *TimelineQuery) GetContextByEventID(ctx context.Context, roomID id.Room
 	err = tq.GetDB().QueryRow(ctx, getEventTimelineRowIDQuery, eventID, roomID).Scan(&timelineRowID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("event not in local timeline")
+			err = ErrEventNotInTimeline
 		}
 		return
 	}

@@ -209,7 +209,7 @@ var CommandDefinitions = []*cmdschema.EventContent{{
 	Description: event.MakeExtensibleText("Open the room state explorer"),
 }, {
 	Command:     Search,
-	Description: event.MakeExtensibleText("Search messages in the current or all rooms; use from:<name> to filter by sender and date:<date range> to filter by date"),
+	Description: event.MakeExtensibleText("Search messages in the current or all rooms; use from:<name> to filter by sender and date:<date range> or received:<date range> to filter by date"),
 	Parameters: []*cmdschema.Parameter{{
 		Key:         "query",
 		Schema:      cmdschema.PrimitiveTypeString.Schema(),

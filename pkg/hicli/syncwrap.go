@@ -28,6 +28,8 @@ type contextKey int
 
 const (
 	syncContextKey contextKey = iota
+
+	maxDatabaseBusySyncRetries = 60
 )
 
 var isDatabaseBusyError = func(error) bool {
@@ -53,9 +55,22 @@ func (h *hiSyncer) ProcessResponse(ctx context.Context, resp *mautrix.RespSync, 
 		err = c.DB.DoTxn(ctx, nil, func(ctx context.Context) error {
 			return c.processSyncResponse(ctx, resp, since)
 		})
-		if i < 24 && isDatabaseBusyError(err) {
-			zerolog.Ctx(ctx).Warn().Err(err).Msg("Database is busy, retrying")
-			c.markSyncErrored(err, false)
+		if i < maxDatabaseBusySyncRetries && isDatabaseBusyError(err) {
+			backfillPause := c.slowBackfillAfterDatabaseBusy(i)
+			retryIn := min(time.Duration(i+1)*100*time.Millisecond, time.Second)
+			zerolog.Ctx(ctx).Warn().
+				Err(err).
+				Dur("retry_in", retryIn).
+				Dur("backfill_pause", backfillPause).
+				Msg("Database is busy, retrying")
+			if i >= 10 {
+				c.markSyncErrored(err, false)
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(retryIn):
+			}
 			continue
 		} else if err != nil {
 			return err

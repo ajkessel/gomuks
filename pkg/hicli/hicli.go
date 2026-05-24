@@ -79,6 +79,8 @@ type HiClient struct {
 	BackfillHistoryDays *int
 	backfillOnce        sync.Once
 	backfillReady       chan struct{}
+	backfillActive      atomic.Bool
+	backfillPauseUntil  atomic.Int64
 
 	sendLock     map[id.RoomID]*sync.Mutex
 	sendLockLock sync.Mutex

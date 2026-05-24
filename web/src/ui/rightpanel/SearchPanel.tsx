@@ -33,7 +33,7 @@ function stripDiacritics(str: string): string {
 function queryToTerms(query: string): string[] {
 	return query
 		.replace(/\bfrom:(?:"[^"]*"|\S+)/gi, "")
-		.replace(/\bdate:\S+/gi, "")
+		.replace(/\b(?:date|received):\S+/gi, "")
 		.replace(/["*^]/g, " ")
 		.trim().split(/\s+/).map(stripDiacritics).filter(Boolean)
 }
