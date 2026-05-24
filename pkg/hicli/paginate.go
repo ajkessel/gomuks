@@ -421,19 +421,26 @@ func (h *HiClient) PaginateServer(ctx context.Context, roomID id.RoomID, limit i
 		}, nil
 	}
 	wakeupSessionRequests := false
+	decryptionQueue := make(map[id.SessionID]*database.SessionRequest)
+	processedEvents := make([]*database.Event, len(resp.Chunk))
+	for i, evt := range resp.Chunk {
+		if err = ctx.Err(); err != nil {
+			return nil, err
+		}
+		processedEvents[i], err = h.processEvent(ctx, evt, room.LazyLoadSummary, decryptionQueue, true)
+		if err != nil {
+			return nil, err
+		}
+	}
 	err = h.DB.DoTxn(ctx, nil, func(ctx context.Context) error {
 		if err = ctx.Err(); err != nil {
 			return err
 		}
 		eventRowIDs := make([]database.EventRowID, len(resp.Chunk))
-		decryptionQueue := make(map[id.SessionID]*database.SessionRequest)
 		iOffset := 0
 		duplicateCount := 0
-		for i, evt := range resp.Chunk {
-			dbEvt, err := h.processEvent(ctx, evt, room.LazyLoadSummary, decryptionQueue, true)
-			if err != nil {
-				return err
-			} else if exists, err := h.DB.Timeline.Has(ctx, roomID, dbEvt.RowID); err != nil {
+		for i, dbEvt := range processedEvents {
+			if exists, err := h.DB.Timeline.Has(ctx, roomID, dbEvt.RowID); err != nil {
 				return fmt.Errorf("failed to check if event exists in timeline: %w", err)
 			} else if exists {
 				duplicateCount++
