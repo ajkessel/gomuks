@@ -143,6 +143,27 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		inputRef.current?.focus()
 	}, [])
 
+	const setRoomScopeAndRefresh = (scoped: boolean) => {
+		setRoomScoped(scoped)
+		if (submittedQuery.trim()) {
+			setEvents([])
+			setHasMore(false)
+			runSearch(submittedQuery, scoped, 0, [])
+		}
+	}
+
+	useEffect(() => {
+		const onKeyDown = (evt: KeyboardEvent) => {
+			if (evt.ctrlKey && evt.altKey && !evt.shiftKey && evt.key.toLowerCase() === "r") {
+				evt.preventDefault()
+				evt.stopPropagation()
+				setRoomScopeAndRefresh(!roomScoped)
+			}
+		}
+		document.addEventListener("keydown", onKeyDown)
+		return () => document.removeEventListener("keydown", onKeyDown)
+	})
+
 	useEffect(() => {
 		if (!initialQuery) {
 			return
@@ -218,15 +239,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 				<input
 					type="checkbox"
 					checked={roomScoped}
-					onChange={e => {
-					const scoped = e.target.checked
-					setRoomScoped(scoped)
-					if (submittedQuery.trim()) {
-						setEvents([])
-						setHasMore(false)
-						runSearch(submittedQuery, scoped, 0, [])
-					}
-				}}
+					onChange={e => setRoomScopeAndRefresh(e.target.checked)}
 				/>
 			</label>
 			{error && <div className="error">{error}</div>}
