@@ -101,10 +101,11 @@ interface SearchResultItemProps {
 	evt: MemDBEvent
 	prevEvt: MemDBEvent | null
 	query: string
+	roomName?: string
 	onJump: (evt: MemDBEvent) => void
 }
 
-const SearchResultItem = ({ evt, prevEvt, query, onJump }: SearchResultItemProps) => {
+const SearchResultItem = ({ evt, prevEvt, query, roomName, onJump }: SearchResultItemProps) => {
 	const containerRef = useRef<HTMLDivElement>(null)
 	// Run after every render so re-renders of TimelineEvent (member load, decrypt)
 	// get re-highlighted automatically.
@@ -113,10 +114,13 @@ const SearchResultItem = ({ evt, prevEvt, query, onJump }: SearchResultItemProps
 			applyHighlights(containerRef.current, queryToTerms(query))
 		}
 	})
-	return <div className="search-result" ref={containerRef}>
-		<TimelineEvent evt={evt} prevEvt={prevEvt} viewType="notifications" />
-		<button className="search-result-jump" onClick={() => onJump(evt)}>Go to message</button>
-	</div>
+	return <>
+		{roomName && <div className="search-result-room" title={roomName}>{roomName}</div>}
+		<div className="search-result" ref={containerRef}>
+			<TimelineEvent evt={evt} prevEvt={prevEvt} viewType="notifications" />
+			<button className="search-result-jump" onClick={() => onJump(evt)}>Go to message</button>
+		</div>
+	</>
 }
 
 interface SearchPanelProps {
@@ -135,6 +139,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	const [error, setError] = useState<string | null>(null)
 	const [hasMore, setHasMore] = useState(false)
 	const [roomScoped, setRoomScoped] = useState(initialRoomScoped)
+	const [resultRoomScoped, setResultRoomScoped] = useState(initialRoomScoped)
 	const scrollFixRef = useRef<number>(null)
 	const viewRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
@@ -178,6 +183,9 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		}
 		setLoading(true)
 		setError(null)
+		if (offset === 0) {
+			setResultRoomScoped(scoped)
+		}
 		client.searchMessages({
 			query: q,
 			roomID: scoped ? roomCtx?.store.roomID : undefined,
@@ -219,6 +227,10 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 			mainScreen.setActiveRoom(evt.room_id, { openEventID: evt.event_id })
 		}
 	}
+	const getRoomName = (evt: MemDBEvent) =>
+		client.store.rooms.get(evt.room_id)?.meta.current.name
+		?? client.store.roomListEntries.get(evt.room_id)?.name
+		?? evt.room_id
 
 	const hasResults = events.length > 0
 	const hasSearched = submittedQuery !== "" && !loading
@@ -260,14 +272,20 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 					<ScaleLoader color="var(--primary-color)"/> Searching...
 				</div>
 			)}
-			{reverseMap(events, (evt, i) =>
+			{reverseMap(events, (evt, i) => {
+				const prevEvt = events[i+1] ?? null
+				const showRoomName = !resultRoomScoped && prevEvt?.room_id !== evt.room_id
+				return (
 				<SearchResultItem
 					key={evt.rowid}
 					evt={evt}
-					prevEvt={events[i+1] ?? null}
+					prevEvt={prevEvt}
 					query={submittedQuery}
+					roomName={showRoomName ? getRoomName(evt) : undefined}
 					onJump={jumpToResult}
-				/>)}
+				/>
+				)
+			})}
 		</div>
 	</>
 }
