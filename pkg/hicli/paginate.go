@@ -428,6 +428,7 @@ func (h *HiClient) PaginateServer(ctx context.Context, roomID id.RoomID, limit i
 		eventRowIDs := make([]database.EventRowID, len(resp.Chunk))
 		decryptionQueue := make(map[id.SessionID]*database.SessionRequest)
 		iOffset := 0
+		duplicateCount := 0
 		for i, evt := range resp.Chunk {
 			dbEvt, err := h.processEvent(ctx, evt, room.LazyLoadSummary, decryptionQueue, true)
 			if err != nil {
@@ -435,22 +436,19 @@ func (h *HiClient) PaginateServer(ctx context.Context, roomID id.RoomID, limit i
 			} else if exists, err := h.DB.Timeline.Has(ctx, roomID, dbEvt.RowID); err != nil {
 				return fmt.Errorf("failed to check if event exists in timeline: %w", err)
 			} else if exists {
-				zerolog.Ctx(ctx).Warn().
-					Int64("row_id", int64(dbEvt.RowID)).
-					Str("event_id", dbEvt.ID.String()).
-					Msg("Event already exists in timeline, skipping")
+				duplicateCount++
 				iOffset++
 				continue
 			}
 			events[i-iOffset] = dbEvt
 			eventRowIDs[i-iOffset] = events[i-iOffset].RowID
 		}
-		if iOffset >= len(events) {
-			events = events[:0]
-			return nil
+		if duplicateCount > 0 {
+			zerolog.Ctx(ctx).Debug().
+				Int("duplicate_count", duplicateCount).
+				Int("page_size", len(resp.Chunk)).
+				Msg("Skipped events that already exist in timeline")
 		}
-		events = events[:len(events)-iOffset]
-		eventRowIDs = eventRowIDs[:len(eventRowIDs)-iOffset]
 		wakeupSessionRequests = len(decryptionQueue) > 0
 		for _, entry := range decryptionQueue {
 			err = h.DB.SessionRequest.Put(ctx, entry)
@@ -458,6 +456,16 @@ func (h *HiClient) PaginateServer(ctx context.Context, roomID id.RoomID, limit i
 				return fmt.Errorf("failed to save session request for %s: %w", entry.SessionID, err)
 			}
 		}
+		err = h.DB.Room.SetPrevBatch(ctx, room.ID, resp.End)
+		if err != nil {
+			return fmt.Errorf("failed to set prev_batch: %w", err)
+		}
+		if iOffset >= len(events) {
+			events = events[:0]
+			return nil
+		}
+		events = events[:len(events)-iOffset]
+		eventRowIDs = eventRowIDs[:len(eventRowIDs)-iOffset]
 		err = h.DB.Event.FillReactionCounts(ctx, roomID, events)
 		if err != nil {
 			return fmt.Errorf("failed to fill reaction counts: %w", err)
@@ -465,10 +473,6 @@ func (h *HiClient) PaginateServer(ctx context.Context, roomID id.RoomID, limit i
 		err = h.DB.Event.FillLastEditRowIDs(ctx, roomID, events)
 		if err != nil {
 			return fmt.Errorf("failed to fill last edit row IDs: %w", err)
-		}
-		err = h.DB.Room.SetPrevBatch(ctx, room.ID, resp.End)
-		if err != nil {
-			return fmt.Errorf("failed to set prev_batch: %w", err)
 		}
 		var tuples []database.TimelineRowTuple
 		tuples, err = h.DB.Timeline.Prepend(ctx, room.ID, eventRowIDs)
