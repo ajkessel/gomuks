@@ -234,7 +234,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 				className="search-input"
 			/>
 			<button type="submit" disabled={loading || !query.trim()}>Search</button>
-			<label>
+			<label title="Toggle current room only (Ctrl+Alt+R)">
 				Current room only
 				<input
 					type="checkbox"

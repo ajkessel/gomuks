@@ -18,7 +18,8 @@ import { modals } from "../modal"
 import { RoomContextData } from "../roomview/roomcontext.ts"
 
 export const jumpToEvent = (roomCtx: RoomContextData, evtID: EventID, allowRetry: boolean = true) => {
-	if (jumpToVisibleEvent(evtID, null, roomCtx)) {
+	const roomView = document.querySelector("div.room-view")
+	if (jumpToVisibleEvent(evtID, roomView, roomCtx)) {
 		console.info("Jumped to event", evtID, "in visible timeline")
 	} else if (roomCtx.store.timeline.length === 0 && allowRetry) {
 		// Hacky sleep to let the timeline load maybe?
