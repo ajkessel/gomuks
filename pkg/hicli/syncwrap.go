@@ -58,7 +58,11 @@ func (h *hiSyncer) ProcessResponse(ctx context.Context, resp *mautrix.RespSync, 
 		if i < maxDatabaseBusySyncRetries && isDatabaseBusyError(err) {
 			backfillPause := c.slowBackfillAfterDatabaseBusy(i)
 			retryIn := min(time.Duration(i+1)*100*time.Millisecond, time.Second)
-			zerolog.Ctx(ctx).Warn().
+			logLevel := zerolog.DebugLevel
+			if i == 0 || i%10 == 9 {
+				logLevel = zerolog.WarnLevel
+			}
+			zerolog.Ctx(ctx).WithLevel(logLevel).
 				Err(err).
 				Dur("retry_in", retryIn).
 				Dur("backfill_pause", backfillPause).
