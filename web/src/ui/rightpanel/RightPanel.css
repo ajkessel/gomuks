@@ -68,7 +68,8 @@ div.right-panel-content.notifications {
 		display: flex;
 		flex-direction: column;
 		overflow: auto;
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 
 		&.empty {
 			align-items: center;
@@ -124,7 +125,8 @@ div.right-panel-content.search {
 		display: flex;
 		flex-direction: column;
 		overflow: auto;
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 
 		> div.empty-search, > div.loading-search {
 			display: flex;
