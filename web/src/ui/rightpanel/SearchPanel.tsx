@@ -151,6 +151,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	}, [])
 
 	const setRoomScopeAndRefresh = (scoped: boolean) => {
+		if (loading) return
 		setRoomScoped(scoped)
 		if (submittedQuery.trim()) {
 			setEvents([])
@@ -169,7 +170,8 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		}
 		document.addEventListener("keydown", onKeyDown)
 		return () => document.removeEventListener("keydown", onKeyDown)
-	})
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [roomScoped])
 
 	useEffect(() => {
 		if (!initialQuery) {

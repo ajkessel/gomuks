@@ -23,3 +23,15 @@ func normalizeFTS(text string) string {
 	result, _, _ := transform.String(t, strings.ToLower(text))
 	return result
 }
+
+// normalizeFTSQuery strips diacritical marks from an FTS query without lowercasing.
+// Preserving case is required so that FTS4 boolean operators (AND, OR, NOT, NEAR)
+// remain uppercase and are interpreted as operators rather than literal search terms.
+// The porter tokenizer handles case-folding for individual search terms.
+func normalizeFTSQuery(query string) string {
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(func(r rune) bool {
+		return unicode.Is(unicode.Mn, r)
+	}))
+	result, _, _ := transform.String(t, query)
+	return result
+}

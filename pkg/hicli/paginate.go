@@ -691,21 +691,21 @@ func parseDateSpec(spec string) (startMs, endMs int64, err error) {
 }
 
 func parseSearchQuery(raw string) (ftsQuery, senderName string, startTime, endTime int64, err error) {
-	if m := fromFilterRegex.FindStringSubmatchIndex(raw); m != nil {
-		if m[2] != -1 {
-			senderName = strings.TrimSpace(raw[m[2]:m[3]])
+	if m := fromFilterRegex.FindStringSubmatch(raw); m != nil {
+		if m[1] != "" {
+			senderName = strings.TrimSpace(m[1])
 		} else {
-			senderName = strings.TrimSpace(raw[m[4]:m[5]])
+			senderName = strings.TrimSpace(m[2])
 		}
-		raw = raw[:m[0]] + raw[m[1]:]
 	}
-	if m := dateFilterRegex.FindStringSubmatchIndex(raw); m != nil {
-		startTime, endTime, err = parseDateSpec(raw[m[2]:m[3]])
+	raw = fromFilterRegex.ReplaceAllString(raw, "")
+	if m := dateFilterRegex.FindStringSubmatch(raw); m != nil {
+		startTime, endTime, err = parseDateSpec(m[1])
 		if err != nil {
 			return
 		}
-		raw = raw[:m[0]] + raw[m[1]:]
 	}
+	raw = dateFilterRegex.ReplaceAllString(raw, "")
 	ftsQuery = strings.TrimSpace(raw)
 	return
 }

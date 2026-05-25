@@ -78,8 +78,8 @@ const (
 		AND ($3 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me
 			WHERE me.type = 'm.room.member' AND me.state_key IS NOT NULL
-			AND (lower(me.state_key) LIKE lower('%'||$3||'%')
-			     OR lower(json_extract(me.content, '$.displayname')) LIKE lower('%'||$3||'%'))
+			AND (lower(me.state_key) LIKE lower('%'||$3||'%') ESCAPE '\'
+			     OR lower(json_extract(me.content, '$.displayname')) LIKE lower('%'||$3||'%') ESCAPE '\')
 		))
 		AND ($4 = 0 OR event.timestamp >= $4)
 		AND ($5 = 0 OR event.timestamp <= $5)
@@ -93,8 +93,8 @@ const (
 		AND ($2 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me
 			WHERE me.type = 'm.room.member' AND me.state_key IS NOT NULL
-			AND (lower(me.state_key) LIKE lower('%'||$2||'%')
-			     OR lower(json_extract(me.content, '$.displayname')) LIKE lower('%'||$2||'%'))
+			AND (lower(me.state_key) LIKE lower('%'||$2||'%') ESCAPE '\'
+			     OR lower(json_extract(me.content, '$.displayname')) LIKE lower('%'||$2||'%') ESCAPE '\')
 		))
 		AND ($3 = 0 OR event.timestamp >= $3)
 		AND ($4 = 0 OR event.timestamp <= $4)
@@ -203,14 +203,22 @@ func (eq *EventQuery) GetMentions(ctx context.Context, ts time.Time, unreadType 
 	return eq.QueryMany(ctx, getMentionEventsQuery, ts.UnixMilli(), unreadType, limit)
 }
 
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
+}
+
 func (eq *EventQuery) Search(ctx context.Context, ftsQuery, senderName string, roomID id.RoomID, startTime, endTime int64, limit, offset int) ([]*Event, error) {
 	if ftsQuery == "" && senderName == "" && startTime == 0 && endTime == 0 {
 		return nil, nil
 	}
+	escapedSender := escapeLike(senderName)
 	if ftsQuery != "" {
-		return eq.QueryMany(ctx, searchEventsQuery, normalizeFTS(ftsQuery), string(roomID), senderName, startTime, endTime, limit, offset)
+		return eq.QueryMany(ctx, searchEventsQuery, normalizeFTSQuery(ftsQuery), string(roomID), escapedSender, startTime, endTime, limit, offset)
 	}
-	return eq.QueryMany(ctx, searchEventsNoFTSQuery, string(roomID), senderName, startTime, endTime, limit, offset)
+	return eq.QueryMany(ctx, searchEventsNoFTSQuery, string(roomID), escapedSender, startTime, endTime, limit, offset)
 }
 
 func (eq *EventQuery) GetByRowIDs(ctx context.Context, rowIDs ...EventRowID) ([]*Event, error) {

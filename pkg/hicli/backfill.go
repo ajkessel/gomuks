@@ -33,6 +33,10 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 	}
 
 	log := zerolog.Ctx(ctx).With().Str("action", "backfill").Logger()
+	if h.BackfillHistoryDays == nil {
+		log.Error().Msg("RunBackfillQueue called with nil BackfillHistoryDays, skipping")
+		return
+	}
 	log.Info().Int("history_days", *h.BackfillHistoryDays).Msg("Starting background history backfill")
 	h.backfillActive.Store(true)
 	defer h.backfillActive.Store(false)
@@ -43,9 +47,10 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 	}
 
 	maxTS := time.Now()
+	var lastRoomID id.RoomID
 	const roomBatch = 50
 	for {
-		rooms, err := h.DB.Room.GetBySortTS(ctx, maxTS, roomBatch)
+		rooms, err := h.DB.Room.GetBySortTS(ctx, maxTS, lastRoomID, roomBatch)
 		if err != nil {
 			log.Err(err).Msg("Failed to get rooms for backfill")
 			return
@@ -72,6 +77,7 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 		if len(rooms) < roomBatch {
 			break
 		}
+		lastRoomID = rooms[len(rooms)-1].ID
 		maxTS = rooms[len(rooms)-1].SortingTimestamp.Time
 	}
 	log.Info().Msg("Background history backfill complete")
@@ -81,6 +87,7 @@ func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff ti
 	log := zerolog.Ctx(ctx).With().Str("action", "backfill").Stringer("room_id", roomID).Logger()
 	log.Debug().Msg("Starting room history backfill")
 	pages := 0
+	busyAttempts := 0
 	for {
 		if !h.waitForBackfillThrottle(ctx, log) {
 			return
@@ -90,8 +97,9 @@ func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff ti
 			log.Debug().Msg("Skipping room backfill: pagination already in progress")
 			return
 		} else if isDatabaseBusyError(err) {
-			h.pauseBackfill(backfillContentionPause)
-			log.Warn().Err(err).Dur("pause", backfillContentionPause).Msg("Database is busy during backfill, slowing down")
+			pause := h.slowBackfillAfterDatabaseBusy(busyAttempts)
+			busyAttempts++
+			log.Warn().Err(err).Dur("pause", pause).Msg("Database is busy during backfill, slowing down")
 			continue
 		} else if err != nil {
 			if ctx.Err() != nil {
@@ -100,6 +108,7 @@ func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff ti
 			log.Err(err).Msg("Failed to backfill room history")
 			return
 		}
+		busyAttempts = 0
 		pages++
 		log.Debug().Int("page", pages).Int("events", len(resp.Events)).Bool("has_more", resp.HasMore).Msg("Fetched backfill page")
 		if !resp.HasMore {

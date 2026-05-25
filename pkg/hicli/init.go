@@ -136,7 +136,7 @@ func (h *HiClient) GetInitialSync(ctx context.Context, batchSize int) iter.Seq[*
 			}
 		}
 		for i := 0; ; i++ {
-			rooms, err := h.DB.Room.GetBySortTS(ctx, maxTS, batchSize)
+			rooms, err := h.DB.Room.GetBySortTS(ctx, maxTS, "", batchSize)
 			if err != nil {
 				if ctx.Err() == nil {
 					zerolog.Ctx(ctx).Err(err).Msg("Failed to get initial rooms to send to client")

@@ -28,7 +28,7 @@ const (
 		       unread_highlights, unread_notifications, unread_messages, marked_unread, prev_batch
 		FROM room
 	`
-	getRoomsBySortingTimestampQuery = getRoomBaseQuery + `WHERE sorting_timestamp < $1 AND sorting_timestamp > 0 AND room_type<>'m.space' ORDER BY sorting_timestamp DESC LIMIT $2`
+	getRoomsBySortingTimestampQuery = getRoomBaseQuery + `WHERE (sorting_timestamp < $1 OR (sorting_timestamp = $1 AND room_id < $3)) AND sorting_timestamp > 0 AND room_type<>'m.space' ORDER BY sorting_timestamp DESC, room_id DESC LIMIT $2`
 	getRoomsByTypeQuery             = getRoomBaseQuery + `WHERE room_type = $1`
 	getRoomByIDQuery                = getRoomBaseQuery + `WHERE room_id = $1`
 	ensureRoomExistsQuery           = `
@@ -97,8 +97,8 @@ func (rq *RoomQuery) Get(ctx context.Context, roomID id.RoomID) (*Room, error) {
 	return rq.QueryOne(ctx, getRoomByIDQuery, roomID)
 }
 
-func (rq *RoomQuery) GetBySortTS(ctx context.Context, maxTS time.Time, limit int) ([]*Room, error) {
-	return rq.QueryMany(ctx, getRoomsBySortingTimestampQuery, maxTS.UnixMilli(), limit)
+func (rq *RoomQuery) GetBySortTS(ctx context.Context, maxTS time.Time, lastRoomID id.RoomID, limit int) ([]*Room, error) {
+	return rq.QueryMany(ctx, getRoomsBySortingTimestampQuery, maxTS.UnixMilli(), limit, string(lastRoomID))
 }
 
 func (rq *RoomQuery) GetAllSpaces(ctx context.Context) ([]*Room, error) {
