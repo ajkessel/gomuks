@@ -57,7 +57,7 @@ class ContextFields implements MainScreenContextFields {
 	}
 
 	setRightPanel = (props: RightPanelProps | null, pushState = true) => {
-		if ((props?.type !== "user") && !this.client.store.activeRoomID) {
+		if (props?.type !== "user" && props?.type !== "search" && !this.client.store.activeRoomID) {
 			props = null
 		}
 		const isEqual = equal(this.currentRightPanel, props)
