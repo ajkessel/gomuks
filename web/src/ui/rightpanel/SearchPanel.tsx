@@ -105,7 +105,7 @@ interface SearchResultItemProps {
 	onJump: (evt: MemDBEvent) => void
 }
 
-const SearchResultItem = ({ evt, prevEvt, query, roomName, onJump }: SearchResultItemProps) => {
+const SearchResultItem = ({ evt, prevEvt, query, roomName }: SearchResultItemProps) => {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const renderEvt = evt.redacted_by ? { ...evt, viewing_redacted: true } : evt
 	// Run after every render so re-renders of TimelineEvent (member load, decrypt)
@@ -120,7 +120,6 @@ const SearchResultItem = ({ evt, prevEvt, query, roomName, onJump }: SearchResul
 		<div className="search-result" ref={containerRef}>
 			{evt.redacted_by && <div className="search-result-redacted">Deleted message</div>}
 			<TimelineEvent evt={renderEvt} prevEvt={prevEvt} viewType="notifications" />
-			<button className="search-result-jump" onClick={() => onJump(evt)}>Go to message</button>
 		</div>
 	</>
 }
