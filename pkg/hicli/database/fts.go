@@ -14,4 +14,5 @@ import (
 
 func init() {
 	litestream.Functions["normalize_fts"] = normalizeFTS
+	litestream.Functions["index_redacted"] = IndexRedacted
 }

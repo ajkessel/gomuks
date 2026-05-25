@@ -10,12 +10,23 @@ package sqlite_wasm_js
 
 import (
 	"strings"
+	"sync/atomic"
 	"syscall/js"
 	"unicode"
 
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
+
+var indexRedacted atomic.Bool
+
+func init() {
+	indexRedacted.Store(true)
+}
+
+func SetIndexRedacted(enabled bool) {
+	indexRedacted.Store(enabled)
+}
 
 func normalizeFTS(text string) string {
 	t := transform.Chain(norm.NFD, transform.RemoveFunc(func(r rune) bool {
@@ -43,11 +54,22 @@ func (c *Conn) registerFunctions() (err error) {
 		return normalizeFTS(args[1].String())
 	})
 	registered = append(registered, normalize)
+	indexRedactedFn := js.FuncOf(func(_ js.Value, _ []js.Value) any {
+		return indexRedacted.Load()
+	})
+	registered = append(registered, indexRedactedFn)
 	c.ptr.Call("createFunction", map[string]any{
 		"name":          "normalize_fts",
 		"xFunc":         normalize,
 		"arity":         1,
 		"deterministic": true,
+		"innocuous":     true,
+	})
+	c.ptr.Call("createFunction", map[string]any{
+		"name":          "index_redacted",
+		"xFunc":         indexRedactedFn,
+		"arity":         0,
+		"deterministic": false,
 		"innocuous":     true,
 	})
 	c.udfs = append(c.udfs, registered...)

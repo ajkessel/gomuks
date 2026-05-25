@@ -4,12 +4,12 @@ SELECT rowid, json_extract(decrypted, '$.body')
 FROM event
 WHERE type = 'm.room.encrypted'
   AND decrypted IS NOT NULL
-  AND redacted_by IS NULL
+  AND (index_redacted() OR redacted_by IS NULL)
   AND json_extract(decrypted, '$.body') IS NOT NULL;
 
 DROP TRIGGER event_fts_insert;
 CREATE TRIGGER event_fts_insert AFTER INSERT ON event
-WHEN NEW.redacted_by IS NULL
+WHEN (index_redacted() OR NEW.redacted_by IS NULL)
     AND json_extract(COALESCE(NEW.decrypted, NEW.content), '$.body') IS NOT NULL
 BEGIN
     INSERT INTO event_fts(rowid, body)

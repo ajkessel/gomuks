@@ -140,6 +140,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	const [hasMore, setHasMore] = useState(false)
 	const [roomScoped, setRoomScoped] = useState(initialRoomScoped)
 	const [resultRoomScoped, setResultRoomScoped] = useState(initialRoomScoped)
+	const [removeRedacted, setRemoveRedacted] = useState(false)
 	const scrollFixRef = useRef<number>(null)
 	const viewRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
@@ -232,7 +233,9 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		?? client.store.roomListEntries.get(evt.room_id)?.name
 		?? evt.room_id
 
-	const hasResults = events.length > 0
+	const hasRedactedResults = events.some(evt => evt.redacted_by)
+	const visibleEvents = removeRedacted ? events.filter(evt => !evt.redacted_by) : events
+	const hasResults = visibleEvents.length > 0
 	const hasSearched = submittedQuery !== "" && !loading
 
 	return <>
@@ -254,6 +257,14 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 					onChange={e => setRoomScopeAndRefresh(e.target.checked)}
 				/>
 			</label>
+			{hasRedactedResults && <label>
+				Remove redacted
+				<input
+					type="checkbox"
+					checked={removeRedacted}
+					onChange={e => setRemoveRedacted(e.target.checked)}
+				/>
+			</label>}
 			{error && <div className="error">{error}</div>}
 		</form>
 		<div className="search-panel-content" ref={viewRef}>
@@ -272,8 +283,8 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 					<ScaleLoader color="var(--primary-color)"/> Searching...
 				</div>
 			)}
-			{reverseMap(events, (evt, i) => {
-				const prevEvt = events[i+1] ?? null
+			{reverseMap(visibleEvents, (evt, i) => {
+				const prevEvt = visibleEvents[i+1] ?? null
 				const showRoomName = !resultRoomScoped && prevEvt?.room_id !== evt.room_id
 				return (
 				<SearchResultItem

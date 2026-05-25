@@ -43,6 +43,7 @@ import (
 	"maunium.net/go/mautrix/id"
 
 	"go.mau.fi/gomuks/pkg/hicli"
+	"go.mau.fi/gomuks/pkg/hicli/database"
 	"go.mau.fi/gomuks/pkg/hicli/jsoncmd"
 	"go.mau.fi/gomuks/version"
 )
@@ -191,6 +192,12 @@ func (gmx *Gomuks) StartClient() {
 
 func (gmx *Gomuks) StartClientWithoutExit(ctx context.Context) int {
 	hicli.HTMLSanitizerImgSrcTemplate = "_gomuks/media/%s/%s?encrypted=false"
+	indexRedacted := true
+	if gmx.Config.Matrix.IndexRedacted != nil {
+		indexRedacted = *gmx.Config.Matrix.IndexRedacted
+	}
+	database.SetIndexRedacted(indexRedacted)
+	gmx.configureSQLiteIndexRedacted(indexRedacted)
 	rawDB, err := dbutil.NewFromConfig("gomuks", dbutil.Config{
 		PoolConfig: gmx.GetDBConfig(),
 	}, dbutil.ZeroLogger(gmx.Log.With().Str("component", "hicli").Str("db_section", "main").Logger()))
@@ -206,6 +213,7 @@ func (gmx *Gomuks) StartClientWithoutExit(ctx context.Context) int {
 		gmx.HandleEvent,
 	)
 	gmx.Client.BackfillHistoryDays = gmx.Config.Matrix.BackfillHistoryDays
+	gmx.Client.IndexRedacted = indexRedacted
 	gmx.Client.Client.SyncPresence = ptr.Val(gmx.Config.Matrix.SetPresence)
 	gmx.Client.LogoutFunc = gmx.Logout
 	httpClient := gmx.Client.Client.Client

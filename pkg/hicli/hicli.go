@@ -77,6 +77,7 @@ type HiClient struct {
 	paginationInterrupter     map[id.RoomID]context.CancelCauseFunc
 
 	BackfillHistoryDays *int
+	IndexRedacted       bool
 	backfillOnce        sync.Once
 	backfillReady       chan struct{}
 	backfillActive      atomic.Bool
@@ -127,6 +128,7 @@ func New(rawDB, cryptoDB *dbutil.Database, log zerolog.Logger, pickleKey []byte,
 		paginationInterrupter: make(map[id.RoomID]context.CancelCauseFunc),
 		sendLock:              make(map[id.RoomID]*sync.Mutex),
 		backfillReady:         make(chan struct{}),
+		IndexRedacted:         true,
 
 		EventHandler: evtHandler,
 	}
@@ -198,9 +200,14 @@ func (h *HiClient) Start(ctx context.Context, userID id.UserID, expectedAccount 
 	if expectedAccount != nil && userID != expectedAccount.UserID {
 		panic(fmt.Errorf("invalid parameters: different user ID in expected account and user ID"))
 	}
+	database.SetIndexRedacted(h.IndexRedacted)
 	err := h.DB.Upgrade(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to upgrade hicli db: %w", err)
+	}
+	err = h.DB.Event.ApplyIndexRedacted(ctx, h.IndexRedacted)
+	if err != nil {
+		return fmt.Errorf("failed to apply FTS redaction indexing config: %w", err)
 	}
 	err = h.CryptoStore.DB.Upgrade(ctx)
 	if err != nil {

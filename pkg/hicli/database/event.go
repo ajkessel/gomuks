@@ -73,7 +73,7 @@ const (
 	searchEventsQuery = getEventBaseQuery + `
 		JOIN event_fts ON event.rowid = event_fts.rowid
 		WHERE event_fts MATCH $1
-		AND event.redacted_by IS NULL
+		AND (index_redacted() OR event.redacted_by IS NULL)
 		AND ($2 = '' OR event.room_id = $2)
 		AND ($3 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me
@@ -87,7 +87,7 @@ const (
 		LIMIT $6 OFFSET $7
 	`
 	searchEventsNoFTSQuery = getEventBaseQuery + `
-		WHERE event.redacted_by IS NULL
+		WHERE (index_redacted() OR event.redacted_by IS NULL)
 		AND json_extract(COALESCE(event.decrypted, event.content), '$.body') IS NOT NULL
 		AND ($1 = '' OR event.room_id = $1)
 		AND ($2 = '' OR event.sender IN (
