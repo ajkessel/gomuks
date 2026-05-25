@@ -28,10 +28,10 @@ import (
 
 const (
 	getEventBaseQuery = `
-		SELECT rowid, -1,
-		       room_id, event_id, sender, type, state_key, timestamp, content, decrypted, decrypted_type,
-		       unsigned, local_content, transaction_id, redacted_by, relates_to, relation_type,
-		       megolm_session_id, decryption_error, send_error, reactions, last_edit_rowid, unread_type, sticky_duration
+		SELECT event.rowid, -1,
+		       event.room_id, event.event_id, event.sender, event.type, event.state_key, event.timestamp, event.content, event.decrypted, event.decrypted_type,
+		       event.unsigned, event.local_content, event.transaction_id, event.redacted_by, event.relates_to, event.relation_type,
+		       event.megolm_session_id, event.decryption_error, event.send_error, event.reactions, event.last_edit_rowid, event.unread_type, event.sticky_duration
 		FROM event
 	`
 	getEventByRowID                  = getEventBaseQuery + `WHERE rowid = $1`
