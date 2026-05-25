@@ -128,6 +128,7 @@ export class RoomStateStore {
 	readonly meta: NonNullCachedEventDispatcher<DBRoom>
 	searchString: string
 	timeline: TimelineRowTuple[] = []
+	#timelineEventRowIDs: Set<EventRowID> = new Set()
 	timelineCache: (MemDBEvent | null)[] = []
 	editTargets: EventRowID[] = []
 	state: Map<EventType, Map<string, EventRowID>> = new Map()
@@ -388,8 +389,11 @@ export class RoomStateStore {
 		}
 		if (reset) {
 			this.timeline = newTimeline
+			this.#timelineEventRowIDs = new Set(newTimeline.map(t => t.event_rowid))
 		} else {
-			this.timeline.splice(0, 0, ...newTimeline)
+			const newUnique = newTimeline.filter(t => !this.#timelineEventRowIDs.has(t.event_rowid))
+			newUnique.forEach(t => this.#timelineEventRowIDs.add(t.event_rowid))
+			this.timeline.splice(0, 0, ...newUnique)
 		}
 		this.notifyTimelineSubscribers()
 		for (const [evtID, receipts] of Object.entries(allReceipts)) {
@@ -592,9 +596,15 @@ export class RoomStateStore {
 		}
 		if (sync.reset) {
 			this.timeline = sync.timeline ?? []
+			this.#timelineEventRowIDs = new Set(this.timeline.map(t => t.event_rowid))
 			this.pendingEvents.splice(0, this.pendingEvents.length)
 		} else if (sync.timeline) {
-			this.timeline.push(...sync.timeline)
+			for (const entry of sync.timeline) {
+				if (!this.#timelineEventRowIDs.has(entry.event_rowid)) {
+					this.#timelineEventRowIDs.add(entry.event_rowid)
+					this.timeline.push(entry)
+				}
+			}
 		}
 		if (sync.meta.unread_notifications === 0 && sync.meta.unread_highlights === 0) {
 			for (const notif of this.openNotifications.values()) {
@@ -753,6 +763,7 @@ export class RoomStateStore {
 		this.paginationRequestedForRow = -1
 		this.hasMoreHistory = true
 		this.timeline = []
+		this.#timelineEventRowIDs = new Set()
 		this.notifyTimelineSubscribers()
 		const eventsToKeepList = this.eventsByRowID.values()
 			.filter(evt => eventsToKeep.has(evt.rowid))
