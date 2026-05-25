@@ -1,4 +1,5 @@
 div.right-panel {
+	grid-area: rightpanel;
 	border-left: 1px solid var(--border-color);
 	display: flex;
 	flex-direction: column;
