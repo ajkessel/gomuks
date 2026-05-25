@@ -163,6 +163,13 @@ div.right-panel-content.search {
 			padding-bottom: .25rem;
 			margin-bottom: .25rem;
 
+			> div.search-result-redacted {
+				margin: .2rem 0 .1rem;
+				color: var(--secondary-text-color);
+				font-size: .78rem;
+				font-weight: bold;
+			}
+
 			> button.search-result-jump {
 				width: 100%;
 				padding: .2rem .5rem;

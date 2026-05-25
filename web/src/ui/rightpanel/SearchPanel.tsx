@@ -107,6 +107,7 @@ interface SearchResultItemProps {
 
 const SearchResultItem = ({ evt, prevEvt, query, roomName, onJump }: SearchResultItemProps) => {
 	const containerRef = useRef<HTMLDivElement>(null)
+	const renderEvt = evt.redacted_by ? { ...evt, viewing_redacted: true } : evt
 	// Run after every render so re-renders of TimelineEvent (member load, decrypt)
 	// get re-highlighted automatically.
 	useLayoutEffect(() => {
@@ -117,7 +118,8 @@ const SearchResultItem = ({ evt, prevEvt, query, roomName, onJump }: SearchResul
 	return <>
 		{roomName && <div className="search-result-room" title={roomName}>{roomName}</div>}
 		<div className="search-result" ref={containerRef}>
-			<TimelineEvent evt={evt} prevEvt={prevEvt} viewType="notifications" />
+			{evt.redacted_by && <div className="search-result-redacted">Deleted message</div>}
+			<TimelineEvent evt={renderEvt} prevEvt={prevEvt} viewType="notifications" />
 			<button className="search-result-jump" onClick={() => onJump(evt)}>Go to message</button>
 		</div>
 	</>
