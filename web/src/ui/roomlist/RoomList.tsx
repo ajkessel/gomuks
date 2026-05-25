@@ -158,9 +158,10 @@ const RoomList = ({ activeRoomID, space }: RoomListProps) => {
 			{query === "" && <button onClick={openCreateRoom} title="Create room">
 				<AddCircleIcon/>
 			</button>}
-			<button onClick={clearQuery} disabled={query === ""}>
-				{query !== "" ? <CloseIcon/> : <SearchIcon/>}
-			</button>
+			{query !== ""
+				? <button onClick={clearQuery}><CloseIcon/></button>
+				: <button onClick={() => mainScreen.setRightPanel({ type: "search", initialRoomScoped: false })} title="Search messages"><SearchIcon/></button>
+			}
 		</div>
 		<div className={`space-bar ${currentTabID ? "has-profiles" : "no-profiles"}`}>
 			<FakeSpace space={null} setSpace={mainScreen.setSpace} isActive={space === null} />
