@@ -1,4 +1,4 @@
--- v0 -> v23 (compatible with v22+): Latest revision
+-- v0 -> v24 (compatible with v22+): Latest revision
 CREATE TABLE account (
 	user_id        TEXT NOT NULL PRIMARY KEY,
 	device_id      TEXT NOT NULL,
@@ -117,22 +117,22 @@ CREATE INDEX event_megolm_session_id_idx ON event (room_id, megolm_session_id);
 CREATE INDEX event_mention_idx ON event (timestamp DESC) WHERE unread_type > 0;
 CREATE INDEX event_sticky_idx ON event (room_id, timestamp) WHERE sticky_duration IS NOT NULL;
 
-CREATE VIRTUAL TABLE event_fts USING fts4(body, tokenize=porter);
+CREATE VIRTUAL TABLE event_fts USING fts4(sender, body, tokenize=porter);
 
 CREATE TRIGGER event_fts_insert AFTER INSERT ON event
 WHEN (index_redacted() OR NEW.redacted_by IS NULL)
     AND json_extract(COALESCE(NEW.decrypted, NEW.content), '$.body') IS NOT NULL
 BEGIN
-    INSERT INTO event_fts(rowid, body)
-    VALUES (NEW.rowid, normalize_fts(json_extract(COALESCE(NEW.decrypted, NEW.content), '$.body')));
+    INSERT INTO event_fts(rowid, sender, body)
+    VALUES (NEW.rowid, NEW.sender, normalize_fts(json_extract(COALESCE(NEW.decrypted, NEW.content), '$.body')));
 END;
 
 CREATE TRIGGER event_fts_decrypt AFTER UPDATE OF decrypted ON event
 WHEN NEW.decrypted IS NOT NULL AND OLD.decrypted IS NULL AND (index_redacted() OR NEW.redacted_by IS NULL)
 BEGIN
     DELETE FROM event_fts WHERE rowid = NEW.rowid;
-    INSERT INTO event_fts(rowid, body)
-    SELECT NEW.rowid, normalize_fts(json_extract(NEW.decrypted, '$.body'))
+    INSERT INTO event_fts(rowid, sender, body)
+    SELECT NEW.rowid, NEW.sender, normalize_fts(json_extract(NEW.decrypted, '$.body'))
     WHERE json_extract(NEW.decrypted, '$.body') IS NOT NULL;
 END;
 
