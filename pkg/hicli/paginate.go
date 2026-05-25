@@ -635,12 +635,75 @@ func (h *HiClient) GetMentions(ctx context.Context, maxTS time.Time, unreadType 
 }
 
 var fromFilterRegex = regexp.MustCompile(`(?i)\bfrom:(?:"([^"]+)"|(\S+))`)
-var dateFilterRegex = regexp.MustCompile(`(?i)\b(?:date|received):(\d{1,2}/\d{1,2}/\d{2,4}-(?:\d{1,2}/\d{1,2}/\d{2,4})?|-\d{1,2}/\d{1,2}/\d{2,4}|[<>]?\d{1,2}/\d{1,2}/\d{2,4})`)
+var dateFilterRegex = regexp.MustCompile(`(?i)\b(?:date|received):("(?:[^"]+)"|\d{1,2}/\d{1,2}/\d{2,4}-(?:\d{1,2}/\d{1,2}/\d{2,4})?|-\d{1,2}/\d{1,2}/\d{2,4}|[<>]?\d{1,2}/\d{1,2}/\d{2,4}|[a-z]+)`)
 
 const (
 	defaultSearchLimit = 50
 	maxSearchLimit     = 100
 )
+
+var weekdayNames = map[string]time.Weekday{
+	"sunday":    time.Sunday,
+	"monday":    time.Monday,
+	"tuesday":   time.Tuesday,
+	"wednesday": time.Wednesday,
+	"thursday":  time.Thursday,
+	"friday":    time.Friday,
+	"saturday":  time.Saturday,
+}
+
+func parseNaturalDate(phrase string) (start, end time.Time, ok bool) {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	switch strings.ToLower(strings.TrimSpace(phrase)) {
+	case "today":
+		return today, today, true
+	case "yesterday":
+		y := today.AddDate(0, 0, -1)
+		return y, y, true
+	case "this week":
+		wd := int(today.Weekday())
+		if wd == 0 {
+			wd = 7
+		}
+		monday := today.AddDate(0, 0, -(wd - 1))
+		return monday, monday.AddDate(0, 0, 6), true
+	case "last week":
+		wd := int(today.Weekday())
+		if wd == 0 {
+			wd = 7
+		}
+		monday := today.AddDate(0, 0, -(wd-1)-7)
+		return monday, monday.AddDate(0, 0, 6), true
+	case "this month":
+		first := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local)
+		last := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, time.Local)
+		return first, last, true
+	case "last month":
+		first := time.Date(now.Year(), now.Month()-1, 1, 0, 0, 0, 0, time.Local)
+		last := time.Date(now.Year(), now.Month(), 0, 0, 0, 0, 0, time.Local)
+		return first, last, true
+	case "this year":
+		return time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local),
+			time.Date(now.Year(), 12, 31, 0, 0, 0, 0, time.Local), true
+	case "last year":
+		return time.Date(now.Year()-1, 1, 1, 0, 0, 0, 0, time.Local),
+			time.Date(now.Year()-1, 12, 31, 0, 0, 0, 0, time.Local), true
+	default:
+		lower := strings.ToLower(strings.TrimSpace(phrase))
+		if after, found := strings.CutPrefix(lower, "last "); found {
+			if wd, exists := weekdayNames[after]; exists {
+				days := int(today.Weekday()) - int(wd)
+				if days <= 0 {
+					days += 7
+				}
+				t := today.AddDate(0, 0, -days)
+				return t, t, true
+			}
+		}
+	}
+	return time.Time{}, time.Time{}, false
+}
 
 func parseDateValue(s string) (time.Time, error) {
 	fields := strings.SplitN(s, "/", 3)
@@ -660,6 +723,22 @@ func parseDateValue(s string) (time.Time, error) {
 }
 
 func parseDateSpec(spec string) (startMs, endMs int64, err error) {
+	var phrase string
+	if strings.HasPrefix(spec, `"`) {
+		phrase = strings.Trim(spec, `"`)
+	} else if !strings.ContainsAny(spec, "0123456789") {
+		phrase = spec
+	}
+	if phrase != "" {
+		start, end, ok := parseNaturalDate(strings.TrimSpace(phrase))
+		if !ok {
+			err = fmt.Errorf("unrecognized date phrase %q", phrase)
+			return
+		}
+		startMs = start.UnixMilli()
+		endMs = time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 999000000, time.Local).UnixMilli()
+		return
+	}
 	if strings.HasPrefix(spec, ">") {
 		spec = strings.TrimPrefix(spec, ">") + "-"
 	} else if strings.HasPrefix(spec, "<") {
