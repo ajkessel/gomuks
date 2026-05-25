@@ -13,15 +13,14 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import { use, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { use, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { ScaleLoader } from "react-spinners"
-import { MemDBEvent } from "@/api/types"
+import { EventID, MemDBEvent } from "@/api/types"
 import reverseMap from "@/util/reversemap.ts"
 import ClientContext from "../ClientContext.ts"
 import MainScreenContext from "../MainScreenContext.ts"
-import { RoomContext } from "../roomview/roomcontext.ts"
+import { RoomContext, RoomContextData } from "../roomview/roomcontext.ts"
 import TimelineEvent from "../timeline/TimelineEvent.tsx"
-import { jumpToEvent } from "../util/jumpToEvent.tsx"
 
 const BATCH_SIZE = 50
 
@@ -102,12 +101,43 @@ interface SearchResultItemProps {
 	prevEvt: MemDBEvent | null
 	query: string
 	roomName?: string
-	onJump: (evt: MemDBEvent) => void
 }
 
 const SearchResultItem = ({ evt, prevEvt, query, roomName }: SearchResultItemProps) => {
+	const activeRoomCtx = use(RoomContext)
+	const client = use(ClientContext)!
+	const mainScreen = use(MainScreenContext)
 	const containerRef = useRef<HTMLDivElement>(null)
 	const renderEvt = evt.redacted_by ? { ...evt, viewing_redacted: true } : evt
+	const resultRoom = client.store.rooms.get(evt.room_id)
+	const resultRoomCtx = useMemo(
+		() => resultRoom ? new RoomContextData(resultRoom) : activeRoomCtx,
+		[resultRoom, activeRoomCtx],
+	)
+	if (resultRoomCtx && resultRoom) {
+		const setReplyInRoom = (eventID: EventID, thread: boolean) => {
+			if (window.activeRoomContext?.store === resultRoom) {
+				if (thread) {
+					window.activeRoomContext.setReplyToAsThread(eventID)
+				} else {
+					window.activeRoomContext.setReplyTo(eventID)
+				}
+			} else {
+				if (thread) {
+					resultRoom.hackyPendingReplyToThreadEventID = eventID
+				} else {
+					resultRoom.hackyPendingReplyToEventID = eventID
+				}
+				mainScreen.setActiveRoom(resultRoom.roomID)
+			}
+		}
+		resultRoomCtx.setReplyTo = eventID => {
+			if (eventID) {
+				setReplyInRoom(eventID, false)
+			}
+		}
+		resultRoomCtx.setReplyToAsThread = eventID => setReplyInRoom(eventID, true)
+	}
 	// Run after every render so re-renders of TimelineEvent (member load, decrypt)
 	// get re-highlighted automatically.
 	useLayoutEffect(() => {
@@ -119,7 +149,9 @@ const SearchResultItem = ({ evt, prevEvt, query, roomName }: SearchResultItemPro
 		{roomName && <div className="search-result-room" title={roomName}>{roomName}</div>}
 		<div className="search-result" ref={containerRef}>
 			{evt.redacted_by && <div className="search-result-redacted">Deleted message</div>}
-			<TimelineEvent evt={renderEvt} prevEvt={prevEvt} viewType="notifications" />
+			<RoomContext value={resultRoomCtx}>
+				<TimelineEvent evt={renderEvt} prevEvt={prevEvt} viewType="notifications" />
+			</RoomContext>
 		</div>
 	</>
 }
@@ -132,7 +164,6 @@ interface SearchPanelProps {
 const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPanelProps) => {
 	const roomCtx = use(RoomContext)
 	const client = use(ClientContext)!
-	const mainScreen = use(MainScreenContext)
 	const [query, setQuery] = useState(initialQuery)
 	const [submittedQuery, setSubmittedQuery] = useState(initialQuery)
 	const [events, setEvents] = useState<MemDBEvent[]>([])
@@ -224,17 +255,10 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		}
 	}, [events])
 
-	const jumpToResult = (evt: MemDBEvent) => {
-		if (roomCtx && evt.room_id === roomCtx.store.roomID) {
-			jumpToEvent(roomCtx, evt.event_id)
-		} else {
-			mainScreen.setActiveRoom(evt.room_id, { openEventID: evt.event_id })
-		}
-	}
 	const getRoomName = (evt: MemDBEvent) =>
 		client.store.rooms.get(evt.room_id)?.meta.current.name
-		?? client.store.roomListEntries.get(evt.room_id)?.name
-		?? evt.room_id
+		|| client.store.roomListEntries.get(evt.room_id)?.name
+		|| evt.room_id
 
 	const hasRedactedResults = events.some(evt => evt.redacted_by)
 	const visibleEvents = removeRedacted ? events.filter(evt => !evt.redacted_by) : events
@@ -296,7 +320,6 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 					prevEvt={prevEvt}
 					query={submittedQuery}
 					roomName={showRoomName ? getRoomName(evt) : undefined}
-					onJump={jumpToResult}
 				/>
 				)
 			})}

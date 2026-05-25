@@ -65,6 +65,14 @@ const RoomView = ({ room, rightPanelResizeHandle, rightPanel }: RoomViewProps) =
 			jumpToEvent(roomContextData, room.hackyPendingJumpToEventID)
 			room.hackyPendingJumpToEventID = null
 		}
+		if (room.hackyPendingReplyToEventID) {
+			roomContextData.setReplyTo(room.hackyPendingReplyToEventID)
+			room.hackyPendingReplyToEventID = null
+		}
+		if (room.hackyPendingReplyToThreadEventID) {
+			roomContextData.setReplyToAsThread(room.hackyPendingReplyToThreadEventID)
+			room.hackyPendingReplyToThreadEventID = null
+		}
 		window.activeRoomContext = roomContextData
 		window.addEventListener("resize", roomContextData.scrollToBottom)
 		return () => {

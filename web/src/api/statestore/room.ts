@@ -173,6 +173,8 @@ export class RoomStateStore {
 	#threadListener: ((append?: MemDBEvent[], overwrite?: MemDBEvent) => void) | null = null
 
 	hackyPendingJumpToEventID: EventID | null = null
+	hackyPendingReplyToEventID: EventID | null = null
+	hackyPendingReplyToThreadEventID: EventID | null = null
 
 	constructor(meta: DBRoom, private parent: StateStore) {
 		this.roomID = meta.room_id
