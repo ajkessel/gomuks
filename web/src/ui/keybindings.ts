@@ -43,6 +43,7 @@ export default class Keybindings {
 	private keyDownMap: KeyMap = {
 		"Escape": () => this.context.clearActiveRoom(),
 		"Ctrl+k": () => document.getElementById("room-search")?.focus(),
+		"Super+k": () => document.getElementById("room-search")?.focus(),
 		"Ctrl+f": () => this.context.setRightPanel({ type: "search", initialRoomScoped: true }),
 		"Alt+ArrowUp": () => {
 			if (!this.activeRoom) {
