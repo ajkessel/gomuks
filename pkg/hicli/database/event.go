@@ -70,12 +70,20 @@ const (
 		ORDER BY timestamp DESC
 		LIMIT $3
 	`
-	searchEventsQuery = getEventBaseQuery + `
+	searchEventsQuery = `
+		WITH RECURSIVE room_ids(room_id, depth) AS (
+			SELECT CAST($2 AS TEXT), 0 WHERE $2 <> ''
+			UNION
+			SELECT child_id, depth + 1 FROM space_edge JOIN room_ids ON space_id = room_ids.room_id
+			WHERE (child_event_rowid IS NOT NULL OR parent_validated)
+			  AND depth < 64
+		)
+	` + getEventBaseQuery + `
 		JOIN event_fts ON event.rowid = event_fts.rowid
 		JOIN room ON event.room_id = room.room_id
 		WHERE event_fts MATCH $1
 		AND (index_redacted() OR event.redacted_by IS NULL)
-		AND ($2 = '' OR event.room_id = $2)
+		AND ($2 = '' OR event.room_id IN (SELECT room_id FROM room_ids))
 		AND ($3 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me
 			WHERE me.type = 'm.room.member' AND me.state_key IS NOT NULL
@@ -89,11 +97,19 @@ const (
 		ORDER BY event.timestamp DESC
 		LIMIT $6 OFFSET $7
 	`
-	searchEventsNoFTSQuery = getEventBaseQuery + `
+	searchEventsNoFTSQuery = `
+		WITH RECURSIVE room_ids(room_id, depth) AS (
+			SELECT CAST($1 AS TEXT), 0 WHERE $1 <> ''
+			UNION
+			SELECT child_id FROM space_edge JOIN room_ids ON space_id = room_ids.room_id
+			WHERE (child_event_rowid IS NOT NULL OR parent_validated)
+			  AND depth < 64
+		)
+	` + getEventBaseQuery + `
 		JOIN room ON event.room_id = room.room_id
 		WHERE (index_redacted() OR event.redacted_by IS NULL)
 		AND json_extract(COALESCE(event.decrypted, event.content), '$.body') IS NOT NULL
-		AND ($1 = '' OR event.room_id = $1)
+		AND ($1 = '' OR event.room_id IN (SELECT room_id FROM room_ids))
 		AND ($2 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me
 			WHERE me.type = 'm.room.member' AND me.state_key IS NOT NULL
