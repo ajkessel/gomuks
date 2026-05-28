@@ -108,7 +108,17 @@ const SearchResultItem = ({ evt, prevEvt, query, roomName }: SearchResultItemPro
 	const client = use(ClientContext)!
 	const mainScreen = use(MainScreenContext)
 	const containerRef = useRef<HTMLDivElement>(null)
-	const renderEvt = evt.redacted_by ? { ...evt, viewing_redacted: true } : evt
+	const renderEvt = useMemo(() => {
+		const newEvt = evt.redacted_by ? { ...evt, viewing_redacted: true } : { ...evt }
+		const body = newEvt.content?.body
+		if (typeof body === "string" && body.length > 250) {
+			newEvt.content = { ...newEvt.content, body: body.slice(0, 250) + "…" }
+			if (newEvt.local_content?.sanitized_html) {
+				newEvt.local_content = { ...newEvt.local_content, sanitized_html: undefined }
+			}
+		}
+		return newEvt
+	}, [evt])
 	const resultRoom = client.store.rooms.get(evt.room_id)
 	const resultRoomCtx = useMemo(
 		() => resultRoom ? new RoomContextData(resultRoom) : activeRoomCtx,

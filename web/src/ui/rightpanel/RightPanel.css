@@ -163,8 +163,8 @@ div.right-panel-content.search {
 
 		> div.search-result {
 			border-bottom: 1px solid var(--border-color);
-			padding-bottom: .25rem;
-			margin-bottom: .25rem;
+			padding-bottom: 1rem;
+			margin-bottom: 1rem;
 
 			> div.search-result-redacted {
 				margin: .2rem 0 .1rem;

@@ -192,12 +192,12 @@ const RoomList = ({ activeRoomID, space }: RoomListProps) => {
 			{query !== ""
 				? <button onClick={clearQuery}><CloseIcon/></button>
 				: (
-					<button
-						onClick={() => mainScreen.setRightPanel({ type: "search", initialRoomScoped: false })}
-						title="Search messages"
-					>
-						<SearchIcon/>
-					</button>
+				        <button
+				                onClick={() => mainScreen.setRightPanel({ type: "search", initialRoomScoped: true })}
+				                title="Search messages"
+				        >
+				                <SearchIcon/>
+				        </button>
 				)
 			}
 		</div>
