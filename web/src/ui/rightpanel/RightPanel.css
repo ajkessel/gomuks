@@ -166,16 +166,26 @@ div.right-panel-content.search {
 			margin-bottom: .5rem;
 
 			& div.timeline-event {
-				padding-top: 1.5rem;
-				padding-bottom: .5rem;
+				padding-top: .75rem;
+				padding-bottom: .25rem;
 				position: relative;
 			}
 
-			/* Position the menu at the top in the padded area */
+			/* Position the menu slightly above the event box to avoid obscuring content */
 			& div.event-hover-menu {
-				top: 0;
+				top: -1rem;
 				bottom: auto;
 				z-index: 10;
+
+				&::before {
+					content: '';
+					position: absolute;
+					top: 0;
+					left: -1rem;
+					right: -1rem;
+					bottom: -1rem;
+					z-index: -1;
+				}
 			}
 
 			> div.search-result-redacted {
