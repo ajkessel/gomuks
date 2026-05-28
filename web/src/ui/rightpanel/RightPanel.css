@@ -166,34 +166,16 @@ div.right-panel-content.search {
 			margin-bottom: .5rem;
 
 			& div.timeline-event {
-				padding-top: 1rem;
-				padding-bottom: 2rem;
+				padding-top: 1.5rem;
+				padding-bottom: .5rem;
 				position: relative;
-
-				> div.context-menu-container {
-					position: absolute;
-					inset: 0;
-					grid-area: auto;
-					pointer-events: none;
-				}
 			}
 
-			/* Shift the hover menu down into the extra padding area */
+			/* Position the menu at the top in the padded area */
 			& div.event-hover-menu {
-				top: auto;
-				bottom: .5rem;
+				top: 0;
+				bottom: auto;
 				z-index: 10;
-				pointer-events: auto;
-
-				&::before {
-					content: '';
-					position: absolute;
-					top: -1.5rem;
-					left: -1rem;
-					right: -1rem;
-					bottom: -1rem;
-					z-index: -1;
-				}
 			}
 
 			> div.search-result-redacted {
