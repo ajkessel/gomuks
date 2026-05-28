@@ -16,7 +16,6 @@
 import { use, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { ScaleLoader } from "react-spinners"
 import { EventID, MemDBEvent } from "@/api/types"
-import reverseMap from "@/util/reversemap.ts"
 import ClientContext from "../ClientContext.ts"
 import MainScreenContext from "../MainScreenContext.ts"
 import { RoomContext, RoomContextData } from "../roomview/roomcontext.ts"
@@ -185,7 +184,6 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	const [includeEncrypted, setIncludeEncrypted] = useState(false)
 	const [resultRoomScoped, setResultRoomScoped] = useState(initialRoomScoped)
 	const [removeRedacted, setRemoveRedacted] = useState(false)
-	const scrollFixRef = useRef<number>(null)
 	const viewRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
 
@@ -244,7 +242,6 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 			offset,
 		}).then(
 			res => {
-				scrollFixRef.current = offset === 0 ? 0 : viewRef.current?.scrollHeight ?? null
 				setEvents(existing.concat(res))
 				setHasMore(res.length >= BATCH_SIZE)
 			},
@@ -263,13 +260,6 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	const loadMore = () => {
 		runSearch(submittedQuery, roomScoped, includeDirect, includeEncrypted, events.length, events)
 	}
-
-	useLayoutEffect(() => {
-		if (scrollFixRef.current !== null && viewRef.current) {
-			viewRef.current.scrollTop += viewRef.current.scrollHeight - scrollFixRef.current
-			scrollFixRef.current = null
-		}
-	}, [events])
 
 	const getRoomName = (evt: MemDBEvent) =>
 		client.store.rooms.get(evt.room_id)?.meta.current.name
@@ -346,20 +336,13 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 			{hasSearched && !hasResults && !loading && (
 				<div className="empty-search">No results found for &ldquo;{submittedQuery}&rdquo;</div>
 			)}
-			{hasMore && (
-				<button className="load-more" onClick={loadMore} disabled={loading}>
-					{loading
-						? <><ScaleLoader color="var(--primary-color)"/> Loading more results...</>
-						: "Load more results"}
-				</button>
-			)}
 			{loading && !hasResults && (
 				<div className="loading-search">
 					<ScaleLoader color="var(--primary-color)"/> Searching...
 				</div>
 			)}
-			{reverseMap(visibleEvents, (evt, i) => {
-				const prevEvt = visibleEvents[i+1] ?? null
+			{visibleEvents.map((evt, i) => {
+				const prevEvt = visibleEvents[i-1] ?? null
 				const showRoomName = !resultRoomScoped && prevEvt?.room_id !== evt.room_id
 				return (
 					<SearchResultItem
@@ -371,6 +354,13 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 					/>
 				)
 			})}
+			{hasMore && (
+				<button className="load-more" onClick={loadMore} disabled={loading}>
+					{loading
+						? <><ScaleLoader color="var(--primary-color)"/> Loading more results...</>
+						: "Load more results"}
+				</button>
+			)}
 		</div>
 	</>
 }
