@@ -104,7 +104,7 @@ const (
 		WITH RECURSIVE room_ids(room_id, depth) AS (
 			SELECT CAST($1 AS TEXT), 0 WHERE $1 <> ''
 			UNION
-			SELECT child_id FROM space_edge JOIN room_ids ON space_id = room_ids.room_id
+			SELECT child_id, depth + 1 FROM space_edge JOIN room_ids ON space_id = room_ids.room_id
 			WHERE (child_event_rowid IS NOT NULL OR parent_validated)
 			  AND depth < 64
 		)
