@@ -23,6 +23,7 @@ import { ModalCloseContext, ModalContext } from "../modal"
 import { RoomContextData } from "../roomview/roomcontext.ts"
 import { EventExtraMenu } from "./EventMenu.tsx"
 import { getEncryption, getModalStyleFromButton, getPending, getPowerLevels } from "./util.ts"
+import ChatIcon from "@/icons/chat.svg?react"
 import EditIcon from "@/icons/edit.svg?react"
 import MoreIcon from "@/icons/more.svg?react"
 import ReactIcon from "@/icons/react.svg?react"
@@ -88,6 +89,10 @@ export const usePrimaryItems = (
 	const onClickEdit = () => {
 		closeModal()
 		roomCtx.setEditing(evt)
+	}
+	const onClickJump = () => {
+		closeModal()
+		roomCtx.jumpToEvent(evt.event_id)
 	}
 	const onClickResend = () => {
 		if (!evt.transaction_id) {
@@ -155,6 +160,10 @@ export const usePrimaryItems = (
 			<EditIcon/>
 			{names && "Edit"}
 		</button>}
+		<button onClick={onClickJump} title="Go to message">
+			<ChatIcon/>
+			{names && "Go to message"}
+		</button>
 		{isHover && <button onClick={onClickMore}><MoreIcon/></button>}
 	</>
 }

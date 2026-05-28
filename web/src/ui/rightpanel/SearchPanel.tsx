@@ -146,6 +146,9 @@ const SearchResultItem = ({ evt, prevEvt, query, roomName }: SearchResultItemPro
 			}
 		}
 		resultRoomCtx.setReplyToAsThread = eventID => setReplyInRoom(eventID, true)
+		resultRoomCtx.jumpToEvent = eventID => {
+			mainScreen.setActiveRoom(resultRoom.roomID, { openEventID: eventID })
+		}
 	}
 	// Run after every render so re-renders of TimelineEvent (member load, decrypt)
 	// get re-highlighted automatically.

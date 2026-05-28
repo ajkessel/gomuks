@@ -20,6 +20,7 @@ import { EventID, EventRowID, MemDBEvent } from "@/api/types"
 import ClientContext from "../ClientContext.ts"
 import MessageComposer from "../composer/MessageComposer.tsx"
 import { RoomContext, RoomContextData, useRoomContext } from "../roomview/roomcontext.ts"
+import { jumpToEvent } from "../util/jumpToEvent.tsx"
 import TimelineEvent from "./TimelineEvent.tsx"
 import { renderTimelineList } from "./timelineutil.tsx"
 import "./ThreadView.css"
@@ -33,6 +34,7 @@ const ThreadView = ({ threadRoot }: ThreadViewProps) => {
 	const parentRoomCtx = useRoomContext()
 	const room = parentRoomCtx.store
 	const [threadRoomCtx] = useState(() => new RoomContextData(room, undefined, threadRoot, parentRoomCtx))
+	threadRoomCtx.jumpToEvent = eventID => jumpToEvent(threadRoomCtx, eventID)
 	const [prevBatch, setPrevBatch] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [timeline, setTimeline] = useState<MemDBEvent[]>([])

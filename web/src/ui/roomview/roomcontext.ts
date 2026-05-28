@@ -28,6 +28,7 @@ export class RoomContextData {
 	public setReplyTo: (eventID: EventID | null) => void = noop("setReplyTo")
 	public setReplyToAsThread: (eventID: EventID) => void = noop("setReplyToAsThread")
 	public setEditing: (evt: MemDBEvent | null) => void = noop("setEditing")
+	public jumpToEvent: (eventID: EventID) => void = noop("jumpToEvent")
 	public insertText: (text: string) => void = noop("insertText")
 	public lastThreadEventID: EventID | null = null
 	public directSetFocusedEventRowID: (eventRowID: EventRowID | null) => void = noop("setFocusedEventRowID")

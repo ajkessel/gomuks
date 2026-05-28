@@ -60,6 +60,7 @@ const RoomView = ({ room, rightPanelResizeHandle, rightPanel }: RoomViewProps) =
 	const [forceViewType, setForceViewType] = useState<RoomType | null>(null)
 	const settingsViewType = usePreference(null, room, "room_view_type")
 	const [roomContextData] = useState(() => new RoomContextData(room, setForceViewType))
+	roomContextData.jumpToEvent = eventID => jumpToEvent(roomContextData, eventID)
 	useEffect(() => {
 		if (room.hackyPendingJumpToEventID) {
 			jumpToEvent(roomContextData, room.hackyPendingJumpToEventID)
