@@ -21,10 +21,11 @@ import { useEventAsState } from "@/util/eventdispatcher.ts"
 import EmojiPicker from "../emojipicker/EmojiPicker.tsx"
 import { ModalCloseContext, ModalContext } from "../modal"
 import { RoomContextData } from "../roomview/roomcontext.ts"
+import { TimelineEventViewType } from "../timeline/TimelineEvent.tsx"
 import { EventExtraMenu } from "./EventMenu.tsx"
 import { getEncryption, getModalStyleFromButton, getPending, getPowerLevels } from "./util.ts"
-import ChatIcon from "@/icons/chat.svg?react"
 import EditIcon from "@/icons/edit.svg?react"
+import JumpIcon from "@/icons/jump.svg?react"
 import MoreIcon from "@/icons/more.svg?react"
 import ReactIcon from "@/icons/react.svg?react"
 import RefreshIcon from "@/icons/refresh.svg?react"
@@ -40,6 +41,7 @@ export const usePrimaryItems = (
 	evt: MemDBEvent,
 	isHover: boolean,
 	isFixed: boolean,
+	viewType: TimelineEventViewType,
 	style?: CSSProperties,
 	setForceOpen?: (forceOpen: boolean) => void,
 	afterReply?: () => void,
@@ -110,6 +112,7 @@ export const usePrimaryItems = (
 				evt={evt}
 				roomCtx={roomCtx}
 				style={getModalStyleFromButton(mevt.currentTarget, moreMenuHeight)}
+				viewType={viewType}
 			/>,
 			onClose: () => setForceOpen!(false),
 		})
@@ -160,10 +163,10 @@ export const usePrimaryItems = (
 			<EditIcon/>
 			{names && "Edit"}
 		</button>}
-		<button onClick={onClickJump} title="Go to message">
-			<ChatIcon/>
+		{viewType !== "timeline" && <button onClick={onClickJump} title="Go to message">
+			<JumpIcon/>
 			{names && "Go to message"}
-		</button>
+		</button>}
 		{isHover && <button onClick={onClickMore}><MoreIcon/></button>}
 	</>
 }

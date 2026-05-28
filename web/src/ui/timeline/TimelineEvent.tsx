@@ -144,6 +144,7 @@ const TimelineEvent = ({
 				roomCtx={roomCtx}
 				afterReply={viewType === "context" ? window.closeNestableModal : undefined}
 				style={getModalStyleFromMouse(mouseEvt, EventFullMenu.height)}
+				viewType={viewType}
 			/>,
 		})
 	}
@@ -324,10 +325,11 @@ const TimelineEvent = ({
 				roomCtx={roomCtx}
 				setForceOpen={setForceContextMenuOpen}
 				afterReply={afterReply}
+				viewType={viewType}
 			/>
 		</div>}
 		{isMobileDevice && isFocused && createPortal(
-			<EventFixedMenu evt={evt} roomCtx={roomCtx} afterReply={afterReply} />,
+			<EventFixedMenu evt={evt} roomCtx={roomCtx} afterReply={afterReply} viewType={viewType} />,
 			document.getElementById(roomCtx.threadRoot
 				? "mobile-thread-event-menu-container" : "mobile-event-menu-container")!,
 		)}

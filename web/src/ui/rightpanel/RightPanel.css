@@ -169,20 +169,30 @@ div.right-panel-content.search {
 				padding-top: 1rem;
 				padding-bottom: 2rem;
 				position: relative;
+
+				> div.context-menu-container {
+					position: absolute;
+					inset: 0;
+					grid-area: auto;
+					pointer-events: none;
+				}
 			}
 
 			/* Shift the hover menu down into the extra padding area */
 			& div.event-hover-menu {
 				top: auto;
 				bottom: .5rem;
+				z-index: 10;
+				pointer-events: auto;
 
 				&::before {
 					content: '';
 					position: absolute;
-					top: -1rem;
-					left: 0;
-					right: 0;
-					bottom: 0;
+					top: -1.5rem;
+					left: -1rem;
+					right: -1rem;
+					bottom: -1rem;
+					z-index: -1;
 				}
 			}
 

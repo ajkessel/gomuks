@@ -17,6 +17,7 @@ import { CSSProperties, MouseEvent, use } from "react"
 import { MemDBEvent } from "@/api/types"
 import ClientContext from "../ClientContext.ts"
 import { RoomContextData } from "../roomview/roomcontext.ts"
+import { TimelineEventViewType } from "../timeline/TimelineEvent.tsx"
 import { usePrimaryItems } from "./usePrimaryItems.tsx"
 import { useSecondaryItems } from "./useSecondaryItems.tsx"
 import CloseIcon from "@/icons/close.svg?react"
@@ -25,19 +26,21 @@ interface BaseEventMenuProps {
 	evt: MemDBEvent
 	roomCtx: RoomContextData
 	afterReply?: () => void
+	viewType: TimelineEventViewType
 }
 
 interface EventHoverMenuProps extends BaseEventMenuProps {
 	setForceOpen: (forceOpen: boolean) => void
 }
 
-export const EventHoverMenu = ({ evt, roomCtx, setForceOpen, afterReply }: EventHoverMenuProps) => {
+export const EventHoverMenu = ({ evt, roomCtx, setForceOpen, afterReply, viewType }: EventHoverMenuProps) => {
 	const elements = usePrimaryItems(
 		use(ClientContext)!,
 		roomCtx,
 		evt,
 		true,
 		false,
+		viewType,
 		undefined,
 		setForceOpen,
 		afterReply,
@@ -54,9 +57,9 @@ export const EventExtraMenu = ({ evt, roomCtx, style }: EventContextMenuProps) =
 	return <div style={style} className="context-menu event-context-menu extra">{elements}</div>
 }
 
-export const EventFullMenu = ({ evt, roomCtx, style, afterReply }: EventContextMenuProps) => {
+export const EventFullMenu = ({ evt, roomCtx, style, afterReply, viewType }: EventContextMenuProps) => {
 	const client = use(ClientContext)!
-	const primary = usePrimaryItems(client, roomCtx, evt, false, false, style, undefined, afterReply)
+	const primary = usePrimaryItems(client, roomCtx, evt, false, false, viewType, style, undefined, afterReply)
 	const secondary = useSecondaryItems(client, roomCtx, evt)
 	return <div style={style} className="context-menu event-context-menu full">
 		{primary}
@@ -67,9 +70,9 @@ export const EventFullMenu = ({ evt, roomCtx, style, afterReply }: EventContextM
 
 EventFullMenu.height = 9 * 40
 
-export const EventFixedMenu = ({ evt, roomCtx, afterReply }: BaseEventMenuProps) => {
+export const EventFixedMenu = ({ evt, roomCtx, afterReply, viewType }: BaseEventMenuProps) => {
 	const client = use(ClientContext)!
-	const primary = usePrimaryItems(client, roomCtx, evt, false, true, undefined, undefined, afterReply)
+	const primary = usePrimaryItems(client, roomCtx, evt, false, true, viewType, undefined, undefined, afterReply)
 	const secondary = useSecondaryItems(client, roomCtx, evt, false)
 	const onClose = (evt: MouseEvent<HTMLButtonElement>) => {
 		evt.stopPropagation()
