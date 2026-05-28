@@ -28,7 +28,6 @@ import MoreIcon from "@/icons/more.svg?react"
 import ReactIcon from "@/icons/react.svg?react"
 import RefreshIcon from "@/icons/refresh.svg?react"
 import ReplyIcon from "@/icons/reply.svg?react"
-import ThreadIcon from "@/icons/thread.svg?react"
 import "./index.css"
 
 const noop = () => {}
@@ -49,11 +48,6 @@ export const usePrimaryItems = (
 
 	const onClickReply = () => {
 		roomCtx.setReplyTo(evt.event_id)
-		closeModal()
-		afterReply?.()
-	}
-	const onClickThread = () => {
-		roomCtx.setReplyToAsThread(evt.event_id)
 		closeModal()
 		afterReply?.()
 	}
@@ -142,14 +136,6 @@ export const usePrimaryItems = (
 		>
 			<ReplyIcon/>
 			{names && "Reply"}
-		</button>}
-		{canSend && !roomCtx.threadRoot && <button
-			disabled={isEditing || isPending}
-			title={isEditing ? "Can't start a thread while editing a message" : (pendingTitle || "Start new thread")}
-			onClick={onClickThread}
-		>
-			<ThreadIcon/>
-			{names && "Thread"}
 		</button>}
 		{canEdit && <button onClick={onClickEdit} disabled={isPending} title={pendingTitle}>
 			<EditIcon/>
