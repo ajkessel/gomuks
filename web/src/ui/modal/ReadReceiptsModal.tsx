@@ -19,7 +19,8 @@ import { RoomStateStore, useMultipleRoomMembers, useReadReceipts } from "@/api/s
 import { EventID } from "@/api/types"
 import { getDisplayname } from "@/util/validation.ts"
 import ClientContext from "../ClientContext.ts"
-import { LightboxContext } from "./contexts.ts"
+import { LightboxContext, ModalCloseContext } from "./contexts.ts"
+import CloseIcon from "@/icons/close.svg?react"
 import "./ReadReceiptsModal.css"
 
 interface ReadReceiptsModalProps {
@@ -32,6 +33,7 @@ const fullTimeFormatter = new Intl.DateTimeFormat("en-GB", { dateStyle: "full", 
 
 const ReadReceiptsModal = ({ room, eventID, extraEvents }: ReadReceiptsModalProps) => {
 	const client = use(ClientContext)!
+	const closeModal = use(ModalCloseContext)
 	const receipts = useReadReceipts(room, eventID, extraEvents)
 	const memberEvts = useMultipleRoomMembers(client, room, receipts.map(receipt => receipt.user_id))
 
@@ -56,7 +58,12 @@ const ReadReceiptsModal = ({ room, eventID, extraEvents }: ReadReceiptsModalProp
 	})
 
 	return <div className="read-receipts-modal">
-		<h3>Read by</h3>
+		<div className="modal-header">
+			<h3>Read by</h3>
+			<button className="close-button" onClick={closeModal} title="Close">
+				<CloseIcon />
+			</button>
+		</div>
 		<div className="receipt-list">
 			{receiptList}
 		</div>
