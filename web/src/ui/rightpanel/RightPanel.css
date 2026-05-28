@@ -163,13 +163,14 @@ div.right-panel-content.search {
 
 		> div.search-result {
 			border-bottom: 1px solid var(--border-color);
-			padding-bottom: 1.5rem;
+			padding-top: 1rem;
+			padding-bottom: 2rem;
 			margin-bottom: .5rem;
 
 			/* Shift the hover menu down into the extra padding area */
 			& div.event-hover-menu {
 				top: auto;
-				bottom: 0;
+				bottom: .5rem;
 			}
 
 			> div.search-result-redacted {
