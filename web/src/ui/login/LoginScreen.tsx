@@ -128,30 +128,38 @@ export const LoginScreen = ({ client }: LoginScreenProps) => {
 	return <main className="matrix-login">
 		<h1>gomuks web</h1>
 		<form onSubmit={login}>
+			<label htmlFor="mxlogin-username" className="sr-only">User ID</label>
 			<input
 				type="text"
+				name="username"
 				id="mxlogin-username"
 				placeholder="User ID (@user:example.com)"
 				value={username}
 				onChange={evt => setUsername(evt.target.value)}
 				autoComplete="username"
 			/>
+			<label htmlFor="mxlogin-homeserver-url" className="sr-only">Homeserver URL</label>
 			<input
 				type="text"
+				name="homeserver"
 				id="mxlogin-homeserver-url"
 				placeholder="Homeserver URL (will autofill)"
 				value={homeserverURL}
 				onChange={onChangeHomeserverURL}
 				autoComplete="url"
 			/>
-			{supportsPassword && <input
+			<label htmlFor="mxlogin-password" className="sr-only">Password</label>
+			<input
 				type="password"
+				name="password"
 				id="mxlogin-password"
 				placeholder="Password"
 				value={password}
 				onChange={evt => setPassword(evt.target.value)}
 				autoComplete="current-password"
-			/>}
+				className={supportsPassword ? "" : "hidden"}
+				disabled={!supportsPassword}
+			/>
 			<div className="buttons">
 				{supportsSSO && <button
 					className="mx-login-button primary-color-button"
