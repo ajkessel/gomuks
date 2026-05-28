@@ -4,6 +4,7 @@ div.timeline-event > div.read-receipts {
 	justify-content: right;
 	align-items: end;
 	margin-bottom: .125rem;
+	cursor: var(--clickable-cursor);
 
 	> div.overflow-count {
 		font-size: .75rem;

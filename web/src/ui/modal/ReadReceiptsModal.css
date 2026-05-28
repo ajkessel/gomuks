@@ -1,0 +1,57 @@
+div.read-receipts-modal {
+	min-width: 20rem;
+	max-width: 30rem;
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+
+	> h3 {
+		margin: 0 0 1rem;
+		text-align: center;
+	}
+
+	> div.receipt-list {
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+
+		> div.read-receipt-item {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.25rem;
+
+			> img.avatar {
+				width: 2.5rem;
+				height: 2.5rem;
+				border-radius: 50%;
+			}
+
+			> div.member-info {
+				flex: 1;
+				min-width: 0;
+
+				> div.displayname {
+					font-weight: bold;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+
+				> div.userid {
+					font-size: 0.85rem;
+					color: var(--secondary-text-color);
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+			}
+
+			> div.timestamp {
+				font-size: 0.85rem;
+				color: var(--secondary-text-color);
+			}
+		}
+	}
+}

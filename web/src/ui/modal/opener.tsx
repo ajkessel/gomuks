@@ -17,6 +17,7 @@ import { RefObject } from "react"
 import { RoomStateStore } from "@/api/statestore"
 import { EventID, MemDBEvent } from "@/api/types"
 import EventReactions from "@/ui/modal/EventReactions.tsx"
+import ReadReceiptsModal from "@/ui/modal/ReadReceiptsModal.tsx"
 import { isMobileDevice } from "@/util/ismobile.ts"
 import MediaUploadDialog, { UploadFileFunc } from "../composer/MediaUploadDialog.tsx"
 import VoiceRecorder from "../composer/VoiceRecorder.tsx"
@@ -150,5 +151,15 @@ export function eventReactions(roomCtx: RoomContextData, evt: MemDBEvent): NonNe
 		boxed: true,
 		boxClass: "full-screen-mobile event-reactions-wrapper",
 		innerBoxClass: "event-reactions-modal",
+	}
+}
+
+export function readReceipts(room: RoomStateStore, eventID: EventID, extraEvents?: EventID[]): NonNestableModalState {
+	return {
+		content: <ReadReceiptsModal room={room} eventID={eventID} extraEvents={extraEvents}/>,
+		dimmed: true,
+		boxed: true,
+		boxClass: "read-receipts-modal-wrapper",
+		innerBoxClass: "read-receipts-modal-container",
 	}
 }

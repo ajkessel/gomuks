@@ -14,51 +14,53 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import { use } from "react"
-import { getAvatarThumbnailURL } from "@/api/media.ts"
+import { getAvatarThumbnailURL, getAvatarURL } from "@/api/media.ts"
 import { RoomStateStore, useMultipleRoomMembers, useReadReceipts } from "@/api/statestore"
 import { EventID } from "@/api/types"
-import { humanJoin } from "@/util/join.ts"
 import { getDisplayname } from "@/util/validation.ts"
 import ClientContext from "../ClientContext.ts"
-import { ModalContext, modals } from "../modal"
-import "./ReadReceipts.css"
+import { LightboxContext } from "./contexts.ts"
+import "./ReadReceiptsModal.css"
 
-interface ReadReceiptsProps {
+interface ReadReceiptsModalProps {
 	room: RoomStateStore
 	eventID: EventID
 	extraEvents?: EventID[]
 }
 
-const ReadReceipts = ({ room, eventID, extraEvents }: ReadReceiptsProps) => {
+const fullTimeFormatter = new Intl.DateTimeFormat("en-GB", { dateStyle: "full", timeStyle: "medium" })
+
+const ReadReceiptsModal = ({ room, eventID, extraEvents }: ReadReceiptsModalProps) => {
 	const client = use(ClientContext)!
 	const receipts = useReadReceipts(room, eventID, extraEvents)
 	const memberEvts = useMultipleRoomMembers(client, room, receipts.map(receipt => receipt.user_id))
-	if (receipts.length === 0) {
-		return null
-	}
-	// Hacky hack for mobile clients. Would be nicer to get the number based on the CSS variable defining the size
-	const maxAvatarCount = window.innerWidth > 720 ? 4 : 2
-	const avatarMembers = receipts.length > maxAvatarCount ? memberEvts.slice(-maxAvatarCount+1) : memberEvts
-	const avatars = avatarMembers.map(([userID, member]) => {
-		return <img
-			key={userID}
-			className="small avatar"
-			loading="lazy"
-			src={getAvatarThumbnailURL(userID, member)}
-			alt=""
-		/>
+
+	const receiptList = receipts.map((receipt, i) => {
+		const [userID, member] = memberEvts[i] || [receipt.user_id, null]
+		const timestamp = new Date(receipt.timestamp)
+		return <div key={userID} className="read-receipt-item" title={fullTimeFormatter.format(timestamp)}>
+			<img
+				className="avatar"
+				loading="lazy"
+				src={getAvatarThumbnailURL(userID, member)}
+				data-full-src={getAvatarURL(userID, member)}
+				onClick={use(LightboxContext)}
+				alt=""
+			/>
+			<div className="member-info">
+				<div className="displayname">{getDisplayname(userID, member)}</div>
+				<div className="userid">{userID}</div>
+			</div>
+			<div className="timestamp">{timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+		</div>
 	})
-	const names = memberEvts.map(([userID, member]) => getDisplayname(userID, member))
-	const openModal = use(ModalContext)
-	const onClick = () => openModal(modals.readReceipts(room, eventID, extraEvents))
-	return <div className="read-receipts" title={`Read by ${humanJoin(names)}`} onClick={onClick}>
-		{avatars.length < receipts.length && <div className="overflow-count">
-			+{receipts.length - avatars.length}
-		</div>}
-		<div className="avatars">
-			{avatars}
+
+	return <div className="read-receipts-modal">
+		<h3>Read by</h3>
+		<div className="receipt-list">
+			{receiptList}
 		</div>
 	</div>
 }
 
-export default ReadReceipts
+export default ReadReceiptsModal
