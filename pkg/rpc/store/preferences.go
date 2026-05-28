@@ -42,6 +42,8 @@ type Preferences struct {
 	Favicon                 string `json:"favicon,omitempty"`
 	LowBandwidth            bool   `json:"low_bandwidth,omitempty"`
 	WebPush                 bool   `json:"web_push,omitempty"`
+	Presence                string `json:"presence,omitempty"`
+	BackfillHistoryDays     int    `json:"backfill_history_days,omitempty"`
 }
 
 var DefaultPreferences = Preferences{
@@ -59,8 +61,10 @@ var DefaultPreferences = Preferences{
 	ShowDateSeparators:      true,
 	ShowRoomEmojiPacks:      true,
 	UploadDialog:            true,
+	Presence:                "none",
+	BackfillHistoryDays:     0,
 }
 
 func init() {
-	event.TypeMap[AccountDataGomuksPreferences] = reflect.TypeOf(Preferences{})
+	event.TypeMap[AccountDataGomuksPreferences] = reflect.TypeFor[Preferences]()
 }

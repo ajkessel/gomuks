@@ -309,7 +309,7 @@ func isAllowedAvatarMime(mime string) bool {
 }
 
 func MakeFallbackAvatar(bgColor string, character string) []byte {
-	return []byte(fmt.Sprintf(fallbackAvatarTemplate, bgColor, html.EscapeString(character)))
+	return fmt.Appendf(nil, fallbackAvatarTemplate, bgColor, html.EscapeString(character))
 }
 
 func (w *avatarResponseWriter) WriteHeader(statusCode int) {
@@ -1049,11 +1049,11 @@ func getDimensionsWithMagick(ctx context.Context, file *os.File) (w, h int) {
 			stderr = e.Stderr
 		}
 		zerolog.Ctx(ctx).Err(err).Bytes("stderr", stderr).Msg("Failed to get image dimensions with magick")
-	} else if spaceIdx := bytes.IndexByte(stdout, ' '); spaceIdx == -1 {
+	} else if before, after, ok := bytes.Cut(stdout, []byte{' '}); !ok {
 		zerolog.Ctx(ctx).Error().Bytes("stdout", stdout).Msg("Failed to parse magick output")
-	} else if width, err := strconv.Atoi(string(stdout[:spaceIdx])); err != nil {
+	} else if width, err := strconv.Atoi(string(before)); err != nil {
 		zerolog.Ctx(ctx).Err(err).Bytes("stdout", stdout).Msg("Failed to parse width in magick output")
-	} else if height, err := strconv.Atoi(string(stdout[spaceIdx+1:])); err != nil {
+	} else if height, err := strconv.Atoi(string(after)); err != nil {
 		zerolog.Ctx(ctx).Err(err).Bytes("stdout", stdout).Msg("Failed to parse height in magick output")
 	} else {
 		return width, height

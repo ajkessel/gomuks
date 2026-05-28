@@ -498,10 +498,8 @@ type tagStack []atom.Atom
 
 func (ts *tagStack) contains(tags ...atom.Atom) bool {
 	for i := len(*ts) - 1; i >= 0; i-- {
-		for _, tag := range tags {
-			if (*ts)[i] == tag {
-				return true
-			}
+		if slices.Contains(tags, (*ts)[i]) {
+			return true
 		}
 	}
 	return false
@@ -522,8 +520,8 @@ func (ts *tagStack) pop(tag atom.Atom) bool {
 func getCodeBlockLanguage(token html.Token) string {
 	for _, attr := range token.Attr {
 		if attr.Key == "class" {
-			parts := strings.Fields(attr.Val)
-			for _, part := range parts {
+			parts := strings.FieldsSeq(attr.Val)
+			for part := range parts {
 				match := languageRegex.FindStringSubmatch(part)
 				if len(match) == 2 {
 					return match[1]

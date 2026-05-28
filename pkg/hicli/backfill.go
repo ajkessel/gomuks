@@ -42,7 +42,7 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 	defer h.backfillActive.Store(false)
 
 	var cutoff time.Time
-	if *h.BackfillHistoryDays > 0 {
+	if *h.BackfillHistoryDays >= 0 {
 		cutoff = time.Now().AddDate(0, 0, -*h.BackfillHistoryDays)
 	}
 
@@ -144,10 +144,7 @@ func (h *HiClient) slowBackfillAfterDatabaseBusy(attempt int) time.Duration {
 	if !h.backfillActive.Load() {
 		return 0
 	}
-	pause := time.Duration(attempt+1) * backfillContentionPause
-	if pause > backfillMaxContentionPause {
-		pause = backfillMaxContentionPause
-	}
+	pause := min(time.Duration(attempt+1)*backfillContentionPause, backfillMaxContentionPause)
 	h.pauseBackfill(pause)
 	return pause
 }

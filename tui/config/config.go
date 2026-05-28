@@ -227,7 +227,7 @@ func (config *Config) SaveKeybindings() {
 	config.save("keybindings", config.Dir, "terminal-keybindings.yaml", &config.Keybindings)
 }
 
-func (config *Config) load(name, dir, file string, target interface{}) error {
+func (config *Config) load(name, dir, file string, target any) error {
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
 		debug.Print("Failed to create", dir)
@@ -256,7 +256,7 @@ func (config *Config) load(name, dir, file string, target interface{}) error {
 	return nil
 }
 
-func (config *Config) save(name, dir, file string, source interface{}) {
+func (config *Config) save(name, dir, file string, source any) {
 	if config.nosave {
 		return
 	}

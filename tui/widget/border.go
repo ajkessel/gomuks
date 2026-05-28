@@ -40,11 +40,11 @@ func NewBorder() *Border {
 func (border *Border) Draw(screen mauview.Screen) {
 	width, height := screen.Size()
 	if width == 1 {
-		for borderY := 0; borderY < height; borderY++ {
+		for borderY := range height {
 			screen.SetContent(0, borderY, mauview.Borders.Vertical, nil, border.Style)
 		}
 	} else if height == 1 {
-		for borderX := 0; borderX < width; borderX++ {
+		for borderX := range width {
 			screen.SetContent(borderX, 0, mauview.Borders.Horizontal, nil, border.Style)
 		}
 	}

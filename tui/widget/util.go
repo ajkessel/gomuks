@@ -52,7 +52,7 @@ func WriteLine(screen mauview.Screen, align int, line string, x, y, maxWidth int
 			continue
 		}
 
-		for localOffset := 0; localOffset < chWidth; localOffset++ {
+		for localOffset := range chWidth {
 			screen.SetContent(x+offsetX+localOffset, y, ch, nil, style)
 		}
 		offsetX += chWidth

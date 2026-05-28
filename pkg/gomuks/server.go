@@ -104,11 +104,11 @@ func (gmx *Gomuks) StartServer() {
 		gmx.indexWithMeta = bytes.Replace(
 			data,
 			[]byte("<!-- etag placeholder -->"),
-			[]byte(fmt.Sprintf(
+			fmt.Appendf(nil,
 				metaTagsTemplate,
 				html.EscapeString(gmx.frontendETag),
 				gmx.Config.Push.VAPIDPublicKey,
-			)),
+			),
 			1,
 		)
 	}
@@ -317,8 +317,8 @@ func (gmx *Gomuks) doBasicAuth(r *http.Request) (found, correct bool) {
 
 func getImageAuthToken(r *http.Request) string {
 	hdr := r.Header.Get("Authorization")
-	if strings.HasPrefix(hdr, "Image ") {
-		return strings.TrimPrefix(hdr, "Image ")
+	if after, ok := strings.CutPrefix(hdr, "Image "); ok {
+		return after
 	}
 	return r.URL.Query().Get("image_auth")
 }

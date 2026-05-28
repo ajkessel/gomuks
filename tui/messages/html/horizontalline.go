@@ -47,7 +47,7 @@ func (he *HorizontalLineEntity) Clone() Entity {
 
 func (he *HorizontalLineEntity) Draw(screen mauview.Screen, ctx DrawContext) {
 	width, _ := screen.Size()
-	for x := 0; x < width; x++ {
+	for x := range width {
 		screen.SetContent(x, 0, HorizontalLineChar, nil, he.Style)
 	}
 }

@@ -19,6 +19,7 @@ package html
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -330,7 +331,7 @@ func (parser *htmlParser) codeblockToEntity(node *html.Node) Entity {
 	if node.FirstChild != nil && node.FirstChild.Type == html.ElementNode && node.FirstChild.Data == "code" {
 		node = node.FirstChild
 		attr := parser.getAttribute(node, "class")
-		for _, class := range strings.Split(attr, " ") {
+		for class := range strings.SplitSeq(attr, " ") {
 			if strings.HasPrefix(class, "language-") {
 				lang = class[len("language-"):]
 				break
@@ -485,12 +486,7 @@ func (parser *htmlParser) nodeToEntities(node *html.Node) (entities []Entity) {
 var BlockTags = []string{"p", "h1", "h2", "h3", "h4", "h5", "h6", "ol", "ul", "li", "pre", "blockquote", "div", "hr", "table"}
 
 func (parser *htmlParser) isBlockTag(tag string) bool {
-	for _, blockTag := range BlockTags {
-		if tag == blockTag {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(BlockTags, tag)
 }
 
 func (parser *htmlParser) Parse(htmlData string) Entity {

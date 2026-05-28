@@ -205,7 +205,7 @@ func GetHashColorName(s string) string {
 // GetHashColor gets the tcell Color value for the given string.
 //
 // GetHashColor calls GetHashColorName() and gets the Color value from the tcell.ColorNames map.
-func GetHashColor(val interface{}) tcell.Color {
+func GetHashColor(val any) tcell.Color {
 	switch str := val.(type) {
 	case string:
 		return tcell.ColorNames[GetHashColorName(str)]

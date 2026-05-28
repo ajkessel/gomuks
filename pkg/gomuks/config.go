@@ -45,7 +45,7 @@ type Config struct {
 type MatrixConfig struct {
 	DisableHTTP2        bool            `yaml:"disable_http2"`
 	SetPresence         *event.Presence `yaml:"set_presence"`
-	BackfillHistoryDays *int            `yaml:"backfill_history_days,omitempty"`
+	BackfillHistoryDays *int            `yaml:"backfill_history_days"`
 	IndexRedacted       *bool           `yaml:"index_redacted,omitempty"`
 }
 
@@ -88,8 +88,9 @@ func makeDefaultConfig() Config {
 			ListenAddress: "localhost:29325",
 		},
 		Matrix: MatrixConfig{
-			DisableHTTP2: false,
-			SetPresence:  ptr.Ptr(event.PresenceOffline),
+			DisableHTTP2:        false,
+			SetPresence:         nil,
+			BackfillHistoryDays: ptr.Ptr(0),
 		},
 		Media: MediaConfig{
 			ThumbnailSize: 120,

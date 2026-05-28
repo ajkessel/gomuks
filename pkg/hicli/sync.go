@@ -34,6 +34,7 @@ import (
 
 	"go.mau.fi/gomuks/pkg/hicli/database"
 	"go.mau.fi/gomuks/pkg/hicli/jsoncmd"
+	"go.mau.fi/gomuks/pkg/rpc/store"
 )
 
 type syncContext struct {
@@ -276,6 +277,17 @@ func (h *HiClient) processSyncResponse(ctx context.Context, resp *mautrix.RespSy
 			}
 		case accountDataPerMessageProfiles:
 			h.perMessageProfiles.Store(nil)
+		case store.AccountDataGomuksPreferences:
+			presence := gjson.GetBytes(evt.Content.VeryRaw, "presence").String()
+			if presence == "none" {
+				h.Client.SyncPresence = ""
+			} else if presence != "" {
+				h.Client.SyncPresence = event.Presence(presence)
+			}
+			backfillDays := gjson.GetBytes(evt.Content.VeryRaw, "backfill_history_days")
+			if backfillDays.Exists() {
+				h.BackfillHistoryDays = ptr.Ptr(int(backfillDays.Int()))
+			}
 		}
 	}
 	if syncCtx != nil {

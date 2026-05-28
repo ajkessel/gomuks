@@ -179,15 +179,15 @@ Loop:
 		text = text[spaceIdx+1:]
 	}
 	var content event.MessageEventContent
-	if strings.HasPrefix(text, "/rainbow ") {
-		text = strings.TrimPrefix(text, "/rainbow ")
+	if after, ok := strings.CutPrefix(text, "/rainbow "); ok {
+		text = after
 		content = format.RenderMarkdownCustom(text, rainbowWithHTML)
 		content.FormattedBody = rainbow.ApplyColor(content.FormattedBody)
-	} else if strings.HasPrefix(text, "/plain ") {
-		text = strings.TrimPrefix(text, "/plain ")
+	} else if after, ok := strings.CutPrefix(text, "/plain "); ok {
+		text = after
 		content = format.TextToContent(text)
-	} else if strings.HasPrefix(text, "/html ") {
-		text = strings.TrimPrefix(text, "/html ")
+	} else if after, ok := strings.CutPrefix(text, "/html "); ok {
+		text = after
 		content = format.HTMLToContent(strings.Replace(text, "\n", "<br>", -1))
 	} else if text != "" {
 		hasUnstructuredCommand := unencrypted || rawInputBody || ts != 0 || msgType != event.MsgText ||

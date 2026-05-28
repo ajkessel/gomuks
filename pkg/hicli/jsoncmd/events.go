@@ -134,7 +134,7 @@ type SyncStatus struct {
 	Type       SyncStatusType     `json:"type"`
 	Error      string             `json:"error,omitempty"`
 	ErrorCount int                `json:"error_count"`
-	LastSync   jsontime.UnixMilli `json:"last_sync,omitempty"`
+	LastSync   jsontime.UnixMilli `json:"last_sync"`
 }
 
 type EventsDecrypted struct {
@@ -171,6 +171,8 @@ type ClientState struct {
 
 	Displayname string              `json:"displayname,omitempty"`
 	AvatarURL   id.ContentURIString `json:"avatar_url,omitempty"`
+
+	SyncPresence event.Presence `json:"sync_presence,omitempty"`
 }
 
 type ImageAuthToken string

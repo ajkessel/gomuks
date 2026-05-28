@@ -739,10 +739,10 @@ func parseDateSpec(spec string) (startMs, endMs int64, err error) {
 		endMs = time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 999000000, time.Local).UnixMilli()
 		return
 	}
-	if strings.HasPrefix(spec, ">") {
-		spec = strings.TrimPrefix(spec, ">") + "-"
-	} else if strings.HasPrefix(spec, "<") {
-		spec = "-" + strings.TrimPrefix(spec, "<")
+	if after, ok := strings.CutPrefix(spec, ">"); ok {
+		spec = after + "-"
+	} else if after, ok := strings.CutPrefix(spec, "<"); ok {
+		spec = "-" + after
 	}
 	parts := strings.SplitN(spec, "-", 2)
 	var start, end time.Time

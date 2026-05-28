@@ -65,7 +65,7 @@ type Account struct {
 
 	// TODO save to database
 	DisplayName string        `json:"display_name,omitempty"`
-	AvatarURL   id.ContentURI `json:"avatar_url,omitempty"`
+	AvatarURL   id.ContentURI `json:"avatar_url"`
 }
 
 func (a *Account) Scan(row dbutil.Scannable) (*Account, error) {

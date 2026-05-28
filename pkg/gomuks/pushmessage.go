@@ -59,11 +59,11 @@ func (gmx *Gomuks) getFilePath(ctx context.Context, url string) string {
 	if !ok {
 		return ""
 	}
-	queryIdx := strings.IndexByte(unprefixed, '?')
-	if queryIdx == -1 {
+	before, _, ok0 := strings.Cut(unprefixed, "?")
+	if !ok0 {
 		return ""
 	}
-	parts := strings.Split(unprefixed[:queryIdx], "/")
+	parts := strings.Split(before, "/")
 	if len(parts) != 2 {
 		return ""
 	}

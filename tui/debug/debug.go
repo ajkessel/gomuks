@@ -72,7 +72,7 @@ A fatal error has occurred.
 
 `
 
-func PrettyPanic(panic interface{}) {
+func PrettyPanic(panic any) {
 	fmt.Print(Oops)
 	traceFile := fmt.Sprintf(filepath.Join(os.TempDir(), "gomuks-panic-%s.txt"), time.Now().Format("2006-01-02--15-04-05"))
 

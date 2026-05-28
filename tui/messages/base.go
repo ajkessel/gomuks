@@ -276,8 +276,8 @@ func (msg *UIMessage) Draw(screen mauview.Screen) {
 	msg.DrawReactions(proxyScreen)
 	if msg.IsSelected {
 		w, h := screen.Size()
-		for x := 0; x < w; x++ {
-			for y := 0; y < h; y++ {
+		for x := range w {
+			for y := range h {
 				mainc, combc, style, _ := screen.GetContent(x, y)
 				_, bg, _ := style.Decompose()
 				if bg == tcell.ColorDefault {

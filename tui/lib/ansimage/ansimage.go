@@ -189,9 +189,9 @@ func New(h, w int, bg color.Color) (*ANSImage, error) {
 
 	ansimage.pixmap = func() [][]*ANSIpixel {
 		v := make([][]*ANSIpixel, h)
-		for y := 0; y < h; y++ {
+		for y := range h {
 			v[y] = make([]*ANSIpixel, w)
-			for x := 0; x < w; x++ {
+			for x := range w {
 				v[y][x] = &ANSIpixel{
 					R:          0,
 					G:          0,

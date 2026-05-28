@@ -161,7 +161,7 @@ func New(rawDB, cryptoDB *dbutil.Database, log zerolog.Logger, pickleKey []byte,
 		StateStore: c.ClientStore,
 		Log:        log.With().Str("component", "mautrix client").Logger(),
 
-		SyncPresence: event.PresenceOffline,
+		SyncPresence: "",
 
 		DefaultHTTPBackoff: 1 * time.Second,
 		DefaultHTTPRetries: 6,

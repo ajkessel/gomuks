@@ -275,7 +275,7 @@ func (view *MessageView) CapturePlaintext(height int) string {
 	indexOffset := view.TotalHeight() - view.GetScrollOffset() - height
 	var prevMessage *messages.UIMessage
 	view.lock.RLock()
-	for line := 0; line < height; line++ {
+	for line := range height {
 		index := indexOffset + line
 		if index < 0 {
 			continue
@@ -406,7 +406,7 @@ func (view *MessageView) update(width int) {
 		}
 		msg.CalculateBuffer(view.config.Preferences, width)
 		height := msg.Height()
-		for i := 0; i < height; i++ {
+		for range height {
 			newBuffer = append(newBuffer, msg)
 		}
 		if scrollOffset > 0 && increaseScrollOffset {

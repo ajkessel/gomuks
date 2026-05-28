@@ -300,6 +300,22 @@ export const preferences = {
 		defaultValue: false,
 		hidden: window.gomuksAndroid || !!window.gomuksDesktop || window.gomuksWebWasm,
 	}),
+	presence: new Preference<string>({
+		displayName: "Presence",
+		description: "Your presence status to send to the server.",
+		allowedValues: ["online", "offline", "unavailable", "none"],
+		valueLabels: ["Online", "Offline", "Unavailable", "Don't send"],
+		allowedContexts: anyGlobalContext,
+		defaultValue: "none",
+	}),
+	backfill_history_days: new Preference<number>({
+		displayName: "Backfill history depth",
+		description: "How many days of history to backfill. Use -1 for infinite.",
+		allowedContexts: anyGlobalContext,
+		defaultValue: 0,
+		minValue: -1,
+		maxValue: 3650,
+	}),
 } as const
 
 export const existingPreferenceKeys = new Set(Object.keys(preferences))

@@ -32,6 +32,7 @@ func (h *HiClient) State() *jsoncmd.ClientState {
 		state.VerificationState = h.VerificationState
 		state.Displayname = acc.DisplayName
 		state.AvatarURL = acc.AvatarURL.CUString()
+		state.SyncPresence = h.Client.SyncPresence
 	}
 	return state
 }

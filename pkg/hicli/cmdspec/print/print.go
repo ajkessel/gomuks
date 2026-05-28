@@ -46,7 +46,7 @@ func main() {
 		if len(os.Args) > 2 {
 			cmdNames := strings.Join(names, "\n\t| ")
 
-			exerrors.PanicIfNotNil(os.WriteFile(os.Args[2], []byte(fmt.Sprintf(typescriptTemplate, cmdNames)), 0644))
+			exerrors.PanicIfNotNil(os.WriteFile(os.Args[2], fmt.Appendf(nil, typescriptTemplate, cmdNames), 0644))
 
 			if len(os.Args) > 3 {
 				dumpFS(testdata.FS, os.Args[3])
