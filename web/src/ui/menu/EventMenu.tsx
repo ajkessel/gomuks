@@ -32,7 +32,16 @@ interface EventHoverMenuProps extends BaseEventMenuProps {
 }
 
 export const EventHoverMenu = ({ evt, roomCtx, setForceOpen, afterReply }: EventHoverMenuProps) => {
-	const elements = usePrimaryItems(use(ClientContext)!, roomCtx, evt, true, false, undefined, setForceOpen, afterReply)
+	const elements = usePrimaryItems(
+		use(ClientContext)!,
+		roomCtx,
+		evt,
+		true,
+		false,
+		undefined,
+		setForceOpen,
+		afterReply,
+	)
 	return <div className="event-hover-menu">{elements}</div>
 }
 

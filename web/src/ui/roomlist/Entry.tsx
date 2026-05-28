@@ -107,7 +107,9 @@ const Entry = ({ room, isActive, isSearchSelected, hidden, hideAvatar }: RoomLis
 	}
 	return <div
 		ref={divRef}
-		className={`room-entry ${isActive ? "active" : ""} ${isSearchSelected ? "search-selected" : ""} ${hidden ? "hidden" : ""}`}
+		className={`room-entry ${isActive ? "active" : ""} ${
+			isSearchSelected ? "search-selected" : ""
+		} ${hidden ? "hidden" : ""}`}
 		onClick={mainScreen.clickRoom}
 		onContextMenu={onContextMenu}
 		data-room-id={room.room_id}

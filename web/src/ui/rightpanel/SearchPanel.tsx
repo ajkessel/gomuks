@@ -38,7 +38,7 @@ function queryToTerms(query: string): string[] {
 }
 
 function applyHighlights(el: HTMLElement, terms: string[]): void {
-	if (!terms.length) return
+	if (!terms.length) {return}
 	// Remove any highlights from a previous pass before re-applying.
 	el.querySelectorAll("mark.search-highlight").forEach(mark => {
 		mark.replaceWith(document.createTextNode(mark.textContent ?? ""))
@@ -49,13 +49,13 @@ function applyHighlights(el: HTMLElement, terms: string[]): void {
 	const textNodes: Text[] = []
 	let node: Node | null
 	while ((node = walker.nextNode())) {
-		if ((node as Text).parentElement?.closest("mark")) continue
+		if ((node as Text).parentElement?.closest("mark")) {continue}
 		textNodes.push(node as Text)
 	}
 
 	for (const textNode of textNodes) {
 		const original = textNode.nodeValue ?? ""
-		if (!original.trim()) continue
+		if (!original.trim()) {continue}
 		const normalized = stripDiacritics(original)
 
 		const ranges: [number, number][] = []
@@ -63,12 +63,12 @@ function applyHighlights(el: HTMLElement, terms: string[]): void {
 			let pos = 0
 			while (pos < normalized.length) {
 				const idx = normalized.indexOf(term, pos)
-				if (idx === -1) break
+				if (idx === -1) {break}
 				ranges.push([idx, idx + term.length])
 				pos = idx + term.length
 			}
 		}
-		if (!ranges.length) continue
+		if (!ranges.length) {continue}
 
 		ranges.sort((a, b) => a[0] - b[0])
 		const merged: [number, number][] = []
@@ -84,14 +84,14 @@ function applyHighlights(el: HTMLElement, terms: string[]): void {
 		const fragment = document.createDocumentFragment()
 		let pos = 0
 		for (const [start, end] of merged) {
-			if (pos < start) fragment.appendChild(document.createTextNode(original.slice(pos, start)))
+			if (pos < start) {fragment.appendChild(document.createTextNode(original.slice(pos, start)))}
 			const mark = document.createElement("mark")
 			mark.className = "search-highlight"
 			mark.textContent = original.slice(start, end)
 			fragment.appendChild(mark)
 			pos = end
 		}
-		if (pos < original.length) fragment.appendChild(document.createTextNode(original.slice(pos)))
+		if (pos < original.length) {fragment.appendChild(document.createTextNode(original.slice(pos)))}
 		textNode.parentNode?.replaceChild(fragment, textNode)
 	}
 }
@@ -182,7 +182,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	}, [])
 
 	const setRoomScopeAndRefresh = (scoped: boolean) => {
-		if (loading) return
+		if (loading) {return}
 		setRoomScoped(scoped)
 		if (submittedQuery.trim()) {
 			setEvents([])
@@ -314,13 +314,13 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 				const prevEvt = visibleEvents[i+1] ?? null
 				const showRoomName = !resultRoomScoped && prevEvt?.room_id !== evt.room_id
 				return (
-				<SearchResultItem
-					key={evt.rowid}
-					evt={evt}
-					prevEvt={prevEvt}
-					query={submittedQuery}
-					roomName={showRoomName ? getRoomName(evt) : undefined}
-				/>
+					<SearchResultItem
+						key={evt.rowid}
+						evt={evt}
+						prevEvt={prevEvt}
+						query={submittedQuery}
+						roomName={showRoomName ? getRoomName(evt) : undefined}
+					/>
 				)
 			})}
 		</div>

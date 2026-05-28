@@ -32,7 +32,8 @@ import CloseIcon from "@/icons/close.svg?react"
 import "./RightPanel.css"
 
 export type RightPanelType =
-	"pinned-messages" | "notifications" | "members" | "widgets" | "widget" | "user" | "thread" | "element-call" | "search"
+	"pinned-messages" | "notifications" | "members" | "widgets" | "widget" | "user" | "thread" | "element-call" |
+	"search"
 
 interface RightPanelSimpleProps {
 	type: "pinned-messages" | "notifications" | "members" | "widgets" | "element-call"

@@ -122,10 +122,10 @@ const RoomList = ({ activeRoomID, space }: RoomListProps) => {
 		searchInputRef.current?.focus()
 	}, [client.store])
 	useEffect(() => {
-		if (!query) return
+		if (!query) {return}
 		const onCapture = (evt: KeyboardEvent) => {
-			if (evt.key !== "Escape") return
-			if ((evt.target as Element)?.closest?.(".overlay.modal")) return
+			if (evt.key !== "Escape") {return}
+			if ((evt.target as Element)?.closest?.(".overlay.modal")) {return}
 			evt.stopPropagation()
 			evt.preventDefault()
 			clearQuery()
@@ -134,10 +134,10 @@ const RoomList = ({ activeRoomID, space }: RoomListProps) => {
 		return () => document.removeEventListener("keydown", onCapture, { capture: true })
 	}, [query, clearQuery])
 	useEffect(() => {
-		if (searchSelectedIndex === null) return
+		if (searchSelectedIndex === null) {return}
 		const filteredList = client.store.getFilteredRoomList()
 		const selectedRoom = filteredList[filteredList.length - 1 - searchSelectedIndex]
-		if (!selectedRoom) return
+		if (!selectedRoom) {return}
 		document.querySelector(`.room-entry[data-room-id="${CSS.escape(selectedRoom.room_id)}"]`)
 			?.scrollIntoView({ block: "nearest" })
 	}, [searchSelectedIndex, client.store])
@@ -191,7 +191,14 @@ const RoomList = ({ activeRoomID, space }: RoomListProps) => {
 			</button>}
 			{query !== ""
 				? <button onClick={clearQuery}><CloseIcon/></button>
-				: <button onClick={() => mainScreen.setRightPanel({ type: "search", initialRoomScoped: false })} title="Search messages"><SearchIcon/></button>
+				: (
+					<button
+						onClick={() => mainScreen.setRightPanel({ type: "search", initialRoomScoped: false })}
+						title="Search messages"
+					>
+						<SearchIcon/>
+					</button>
+				)
 			}
 		</div>
 		<div className={`space-bar ${currentTabID ? "has-profiles" : "no-profiles"}`}>

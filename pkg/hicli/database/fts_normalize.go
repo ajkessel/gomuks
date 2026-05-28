@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
@@ -17,9 +18,7 @@ import (
 // normalizeFTS strips diacritical marks and lowercases text for FTS indexing.
 // Combined with the porter tokenizer this gives both accent-folding and stemming.
 func normalizeFTS(text string) string {
-	t := transform.Chain(norm.NFD, transform.RemoveFunc(func(r rune) bool {
-		return unicode.Is(unicode.Mn, r)
-	}))
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)))
 	result, _, _ := transform.String(t, strings.ToLower(text))
 	return result
 }
@@ -29,9 +28,7 @@ func normalizeFTS(text string) string {
 // remain uppercase and are interpreted as operators rather than literal search terms.
 // The porter tokenizer handles case-folding for individual search terms.
 func normalizeFTSQuery(query string) string {
-	t := transform.Chain(norm.NFD, transform.RemoveFunc(func(r rune) bool {
-		return unicode.Is(unicode.Mn, r)
-	}))
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)))
 	result, _, _ := transform.String(t, query)
 	return result
 }
