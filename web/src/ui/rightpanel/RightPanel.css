@@ -121,7 +121,7 @@ div.right-panel-content.search {
 	}
 
 	> div.search-panel-content {
-		padding: 1.5rem .5rem .5rem;
+		padding: 2.5rem .5rem .5rem;
 		display: flex;
 		flex-direction: column;
 		overflow: auto;
@@ -163,14 +163,27 @@ div.right-panel-content.search {
 
 		> div.search-result {
 			border-bottom: 1px solid var(--border-color);
-			padding-top: 1rem;
-			padding-bottom: 2rem;
 			margin-bottom: .5rem;
+
+			& div.timeline-event {
+				padding-top: 1rem;
+				padding-bottom: 2rem;
+				position: relative;
+			}
 
 			/* Shift the hover menu down into the extra padding area */
 			& div.event-hover-menu {
 				top: auto;
 				bottom: .5rem;
+
+				&::before {
+					content: '';
+					position: absolute;
+					top: -1rem;
+					left: 0;
+					right: 0;
+					bottom: 0;
+				}
 			}
 
 			> div.search-result-redacted {
