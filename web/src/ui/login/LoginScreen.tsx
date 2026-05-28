@@ -72,6 +72,7 @@ export const LoginScreen = ({ client }: LoginScreenProps) => {
 			client.rpc.login(homeserverURL, username, password).then(
 				() => {
 					client.passwordCache = password
+					client.requestNotificationPermission()
 				},
 				err => setError(err.toString()),
 			).finally(() => setLoading(false))
@@ -91,7 +92,6 @@ export const LoginScreen = ({ client }: LoginScreenProps) => {
 		client.rpc.discoverHomeserver(username).then(
 			resp => {
 				const url = resp["m.homeserver"].base_url
-				setLoginFlows([])
 				setHomeserverURL(url)
 				resolveLoginFlows(url)
 			},
@@ -127,38 +127,38 @@ export const LoginScreen = ({ client }: LoginScreenProps) => {
 	const beeperDomain = homeserverURL.match(beeperServerRegex)?.[1]
 	return <main className="matrix-login">
 		<h1>gomuks web</h1>
-		<form onSubmit={login}>
-			<label htmlFor="mxlogin-username" className="sr-only">User ID</label>
+		<form name="login" onSubmit={login} method="post" action="#" autoComplete="on">
+			<label htmlFor="username" className="sr-only">User ID</label>
 			<input
 				type="text"
 				name="username"
-				id="mxlogin-username"
+				id="username"
 				placeholder="User ID (@user:example.com)"
 				value={username}
 				onChange={evt => setUsername(evt.target.value)}
 				autoComplete="username"
 			/>
-			<label htmlFor="mxlogin-homeserver-url" className="sr-only">Homeserver URL</label>
+			<label htmlFor="homeserver" className="sr-only">Homeserver URL</label>
 			<input
 				type="text"
 				name="homeserver"
-				id="mxlogin-homeserver-url"
+				id="homeserver"
 				placeholder="Homeserver URL (will autofill)"
 				value={homeserverURL}
 				onChange={onChangeHomeserverURL}
 				autoComplete="url"
 			/>
-			<label htmlFor="mxlogin-password" className="sr-only">Password</label>
+			<label htmlFor="password" className="sr-only">Password</label>
 			<input
 				type="password"
 				name="password"
-				id="mxlogin-password"
+				id="password"
 				placeholder="Password"
 				value={password}
 				onChange={evt => setPassword(evt.target.value)}
 				autoComplete="current-password"
-				className={supportsPassword ? "" : "hidden"}
-				disabled={!supportsPassword}
+				className={loginFlows !== null && !supportsPassword ? "hidden" : ""}
+				disabled={loginFlows !== null && !supportsPassword}
 			/>
 			<div className="buttons">
 				{supportsSSO && <button
@@ -167,11 +167,13 @@ export const LoginScreen = ({ client }: LoginScreenProps) => {
 					disabled={loading}
 					onClick={supportsPassword ? loginSSO : undefined}
 				>Login with SSO</button>}
-				{supportsPassword && <button
-					className="mx-login-button primary-color-button"
+				<button
+					className={`mx-login-button primary-color-button ${
+						loginFlows !== null && !supportsPassword ? "hidden" : ""
+					}`}
 					type="submit"
-					disabled={loading}
-				>Login{supportsSSO || beeperDomain ? " with password" : ""}</button>}
+					disabled={loading || (loginFlows !== null && !supportsPassword)}
+				>Login{supportsSSO || beeperDomain ? " with password" : ""}</button>
 			</div>
 			{error && <div className="error">
 				{error}

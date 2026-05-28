@@ -33,24 +33,38 @@ export const VerificationScreen = ({ client, clientState }: LoginScreenProps) =>
 	const [generatedRecoveryKey, setGeneratedRecoveryKey] = useState<RecoveryKeyResponse | null>(null)
 	const [confirmReset, setConfirmReset] = useState(ResetState.None)
 	const [error, setError] = useState("")
+	const [loading, setLoading] = useState(false)
 	const vs = clientState.verification_state
 
 	const verify = (evt: React.SubmitEvent) => {
 		evt.preventDefault()
+		setLoading(true)
 		client.rpc.verify(recoveryKey).then(
 			() => {},
-			err => setError(err.toString()),
+			err => {
+				setError(err.toString())
+				setLoading(false)
+			},
 		)
 	}
 
+	const skip = () => {
+		client.skippedVerification.emit(true)
+	}
+
 	const logout = () => {
+		setLoading(true)
 		client.rpc.logout().then(
 			() => {},
-			err => setError(err.toString()),
+			err => {
+				setError(err.toString())
+				setLoading(false)
+			},
 		)
 	}
 
 	const startReset = () => {
+		setLoading(true)
 		client.rpc.generateRecoveryKey().then(
 			key => {
 				setGeneratedRecoveryKey(key)
@@ -58,16 +72,20 @@ export const VerificationScreen = ({ client, clientState }: LoginScreenProps) =>
 				setTimeout(() => setConfirmReset(val => val === ResetState.Preparing ? ResetState.Ready : val), 5000)
 			},
 			err => setError(err.toString()),
-		)
+		).finally(() => setLoading(false))
 	}
 
 	const doReset = () => {
 		if (vs.has_cross_signing && !window.confirm("Really reset cross-signing keys and key backup?")) {
 			return
 		}
+		setLoading(true)
 		client.rpc.resetEncryption(generatedRecoveryKey!, client.passwordCache).then(
 			() => {},
-			err => setError(err.toString()),
+			err => {
+				setError(err.toString())
+				setLoading(false)
+			},
 		)
 	}
 	const cancelReset = () => {
@@ -88,12 +106,12 @@ export const VerificationScreen = ({ client, clientState }: LoginScreenProps) =>
 				disabled
 			/>
 			<div className="buttons">
-				<button onClick={cancelReset} type="button" className="mx-login-button">
+				<button onClick={cancelReset} type="button" className="mx-login-button" disabled={loading}>
 					Cancel
 				</button>
 				<button
 					onClick={confirmReset === ResetState.Ready ? doReset : () => {}}
-					disabled={confirmReset !== ResetState.Ready}
+					disabled={confirmReset !== ResetState.Ready || loading}
 					type="button"
 					className={`mx-login-button ${vs.has_cross_signing ? "reset" : "primary-color"}-button`}
 				>
@@ -111,17 +129,28 @@ export const VerificationScreen = ({ client, clientState }: LoginScreenProps) =>
 					placeholder="Recovery key or passphrase"
 					value={recoveryKey}
 					onChange={evt => setRecoveryKey(evt.target.value)}
+					disabled={loading}
 				/>
-				<button className="mx-login-button primary-color-button" type="submit">Verify</button>
+				<button
+					className="mx-login-button primary-color-button"
+					type="submit"
+					disabled={loading || !recoveryKey}
+				>
+					{loading ? "Verifying..." : "Verify"}
+				</button>
 			</> : <p>SSSS not set up, can't verify using recovery key</p>}
 			<div className="buttons">
-				<button onClick={logout} type="button" className="mx-login-button thin-button">
+				<button onClick={logout} type="button" className="mx-login-button thin-button" disabled={loading}>
 					Log out
+				</button>
+				<button onClick={skip} type="button" className="mx-login-button thin-button" disabled={loading}>
+					Skip for now
 				</button>
 				<button
 					onClick={startReset}
 					type="button"
 					className={`mx-login-button ${vs.has_cross_signing ? "thin-button reset" : "primary-color"}-button`}
+					disabled={loading}
 				>
 					{vs.has_cross_signing ? "Reset encryption identity" : "Set up encryption"}
 				</button>
