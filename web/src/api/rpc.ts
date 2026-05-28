@@ -325,8 +325,13 @@ export default abstract class RPCClient {
 		limit: number = 50,
 		offset: number = 0,
 		room_id: RoomID | undefined = undefined,
+		include_direct: boolean = false,
+		include_encrypted: boolean = false,
 	): Promise<RawDBEvent[]> {
-		return this.request("search_messages", { query, limit, offset, room_id })
+		return this.request("search_messages", {
+			query, limit, offset, room_id,
+			include_direct, include_encrypted,
+		})
 	}
 
 	getEventContext(room_id: RoomID, event_id: EventID, limit: number = 20): Promise<EventContextResponse> {

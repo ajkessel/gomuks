@@ -157,6 +157,10 @@ type SearchMessagesParams struct {
 	Query string `json:"query"`
 	// Optional room ID to restrict search to a single room.
 	RoomID id.RoomID `json:"room_id,omitempty"`
+	// Whether to include direct messages in the search results (if not filtering by room ID).
+	IncludeDirect bool `json:"include_direct"`
+	// Whether to include encrypted rooms in the search results (if not filtering by room ID).
+	IncludeEncrypted bool `json:"include_encrypted"`
 	// Maximum number of results to return.
 	Limit int `json:"limit"`
 	// Offset for pagination.
