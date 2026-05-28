@@ -39,7 +39,6 @@ export default class Client {
 	readonly state = new CachedEventDispatcher<ClientState>()
 	readonly profile = new NonNullCachedEventDispatcher<UserProfile>({})
 	readonly syncStatus = new NonNullCachedEventDispatcher<SyncStatus>({ type: "waiting", error_count: 0 })
-	readonly skippedVerification = new NonNullCachedEventDispatcher<boolean>(false)
 	readonly initComplete = new NonNullCachedEventDispatcher<boolean>(false)
 	readonly store = new StateStore()
 	#stateRequests: RoomStateGUID[] = []

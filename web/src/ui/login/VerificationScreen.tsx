@@ -48,10 +48,6 @@ export const VerificationScreen = ({ client, clientState }: LoginScreenProps) =>
 		)
 	}
 
-	const skip = () => {
-		client.skippedVerification.emit(true)
-	}
-
 	const logout = () => {
 		setLoading(true)
 		client.rpc.logout().then(
@@ -142,9 +138,6 @@ export const VerificationScreen = ({ client, clientState }: LoginScreenProps) =>
 			<div className="buttons">
 				<button onClick={logout} type="button" className="mx-login-button thin-button" disabled={loading}>
 					Log out
-				</button>
-				<button onClick={skip} type="button" className="mx-login-button thin-button" disabled={loading}>
-					Skip for now
 				</button>
 				<button
 					onClick={startReset}

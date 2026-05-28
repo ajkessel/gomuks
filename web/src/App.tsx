@@ -38,7 +38,6 @@ function App() {
 	const client = useMemo(() => new Client(makeRPCClient()), [])
 	const connState = useEventAsState(client.rpc.connect)
 	const clientState = useEventAsState(client.state)
-	const skippedVerification = useEventAsState(client.skippedVerification)
 	useEffect(() => {
 		window.client = client
 		return client.start()
@@ -86,7 +85,7 @@ function App() {
 		</div>
 	} else if (!clientState.is_logged_in) {
 		return <div className="pre-main"><LoginScreen client={client} clientState={clientState}/></div>
-	} else if (!clientState.is_verified && !skippedVerification) {
+	} else if (!clientState.is_verified) {
 		return <div className="pre-main"><VerificationScreen client={client} clientState={clientState}/></div>
 	} else {
 		return <ClientContext value={client}>
