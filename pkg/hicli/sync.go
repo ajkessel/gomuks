@@ -62,12 +62,16 @@ func (h *HiClient) markSyncErrored(err error, permanent bool) {
 
 var (
 	syncOK      = &jsoncmd.SyncStatus{Type: jsoncmd.SyncStatusOK}
-	syncWaiting = &jsoncmd.SyncStatus{Type: jsoncmd.SyncStatusWaiting}
+	syncWaiting = &jsoncmd.SyncStatus{Type: jsoncmd.SyncStatusWaiting, Initial: true}
 )
 
 func (h *HiClient) markSyncOK() {
-	if h.SyncStatus.Swap(syncOK) != syncOK {
-		h.EventHandler(syncOK)
+	stat := syncOK
+	if !h.firstSyncReceived {
+		stat = &jsoncmd.SyncStatus{Type: jsoncmd.SyncStatusOK, Initial: true}
+	}
+	if h.SyncStatus.Swap(stat) != stat {
+		h.EventHandler(stat)
 	}
 }
 

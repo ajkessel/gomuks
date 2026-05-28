@@ -135,6 +135,7 @@ type SyncStatus struct {
 	Error      string             `json:"error,omitempty"`
 	ErrorCount int                `json:"error_count"`
 	LastSync   jsontime.UnixMilli `json:"last_sync"`
+	Initial    bool               `json:"initial"`
 }
 
 type EventsDecrypted struct {

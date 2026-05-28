@@ -143,6 +143,7 @@ export interface SyncStatus {
 	error?: string
 	error_count: number
 	last_sync?: number
+	initial?: boolean
 }
 
 export interface SyncStatusEvent extends BaseRPCCommand<SyncStatus> {

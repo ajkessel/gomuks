@@ -447,7 +447,7 @@ const MainScreen = () => {
 		classNames.push("right-panel-open")
 	}
 	let syncLoader: JSX.Element | null = null
-	if (syncStatus.type === "waiting") {
+	if (syncStatus.type === "waiting" && syncStatus.initial) {
 		syncLoader = <div className="sync-status waiting">
 			<SyncLoader color="var(--primary-color)"/>
 			Waiting for first sync...
