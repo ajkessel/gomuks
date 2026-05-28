@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import { use } from "react"
+import { use, useMemo } from "react"
 import { getAvatarThumbnailURL, getAvatarURL } from "@/api/media.ts"
 import { RoomStateStore, useMultipleRoomMembers, useReadReceipts } from "@/api/statestore"
 import { EventID } from "@/api/types"
@@ -35,9 +35,11 @@ const ReadReceiptsModal = ({ room, eventID, extraEvents }: ReadReceiptsModalProp
 	const client = use(ClientContext)!
 	const closeModal = use(ModalCloseContext)
 	const receipts = useReadReceipts(room, eventID, extraEvents)
-	const memberEvts = useMultipleRoomMembers(client, room, receipts.map(receipt => receipt.user_id))
+	const sortedReceipts = useMemo(() => [...receipts].sort((a, b) => a.timestamp - b.timestamp), [receipts])
+	const userIDs = useMemo(() => sortedReceipts.map(receipt => receipt.user_id), [sortedReceipts])
+	const memberEvts = useMultipleRoomMembers(client, room, userIDs)
 
-	const receiptList = receipts.map((receipt, i) => {
+	const receiptList = sortedReceipts.map((receipt, i) => {
 		const [userID, member] = memberEvts[i] || [receipt.user_id, null]
 		const timestamp = new Date(receipt.timestamp)
 		return <div key={userID} className="read-receipt-item" title={fullTimeFormatter.format(timestamp)}>
