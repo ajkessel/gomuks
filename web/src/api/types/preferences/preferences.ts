@@ -316,6 +316,12 @@ export const preferences = {
 		minValue: -1,
 		maxValue: 3650,
 	}),
+	collapse_system_events: new Preference<boolean>({
+		displayName: "Collapse system events",
+		description: "Group and hide contiguous system events like joins, leaves, and reactions in the room timeline by default.",
+		allowedContexts: anyContext,
+		defaultValue: false,
+	}),
 } as const
 
 export const existingPreferenceKeys = new Set(Object.keys(preferences))

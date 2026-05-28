@@ -16,6 +16,7 @@
 import { JSX } from "react"
 import { MemDBEvent, MemberEventContent } from "@/api/types"
 import { Preferences } from "@/api/types/preferences"
+import CollapsedEvents from "./CollapsedEvents.tsx"
 import TimelineEvent, { TimelineEventViewType } from "./TimelineEvent.tsx"
 import { HiddenEvent, getBodyType } from "./content"
 
@@ -46,6 +47,29 @@ const unredactableEventTypes = new Set([
 	"m.room.member",
 ])
 
+const collapsibleEventTypes = new Set([
+	"m.room.member",
+	"m.reaction",
+	"m.room.redaction",
+	"m.room.power_levels",
+	"m.room.name",
+	"m.room.avatar",
+	"m.room.topic",
+	"m.room.pinned_events",
+	"m.room.server_acl",
+	"m.room.tombstone",
+	"m.policy.rule.user",
+	"m.policy.rule.room",
+	"m.policy.rule.server",
+])
+
+function isCollapsible(entry: MemDBEvent, prefs: Preferences): boolean {
+	if (!prefs.collapse_system_events) {
+		return false
+	}
+	return collapsibleEventTypes.has(entry.type)
+}
+
 function shouldHide(entry: MemDBEvent, prefs: Preferences): boolean {
 	if (entry.type === "m.room.member") {
 		if (!prefs.show_membership_events) {
@@ -73,17 +97,54 @@ export function renderTimelineList(
 	let prevEvt: MemDBEvent | null = prevEventOverride ?? null
 	let receiptMergeIdx: number | null = null
 	const flattenedPrefs = {
-		small_replies: prefs.small_replies,
-		small_threads: viewType !== "thread" && prefs.small_threads,
-		display_read_receipts: prefs.display_read_receipts,
-		show_membership_events: prefs.show_membership_events,
-		show_profile_changes: prefs.show_profile_changes,
-		show_redacted_events: prefs.show_redacted_events,
-		show_hidden_events: prefs.show_hidden_events,
+		small_replies: !!prefs.small_replies,
+		small_threads: viewType !== "thread" && !!prefs.small_threads,
+		display_read_receipts: !!prefs.display_read_receipts,
+		show_membership_events: !!prefs.show_membership_events,
+		show_profile_changes: !!prefs.show_profile_changes,
+		show_redacted_events: !!prefs.show_redacted_events,
+		show_hidden_events: !!prefs.show_hidden_events,
+		collapse_system_events: !!prefs.collapse_system_events,
 	}
-	return timeline.map(entry => {
+
+	const result: (JSX.Element | null)[] = []
+	let currentGroup: MemDBEvent[] = []
+
+	const flushGroup = () => {
+		if (currentGroup.length === 0) {
+			return
+		}
+		if (currentGroup.length === 1) {
+			const entry = currentGroup[0]
+			result.push(<TimelineEvent
+				key={entry.rowid}
+				evt={entry}
+				prevEvt={prevEvt}
+				smallReplies={flattenedPrefs.small_replies}
+				smallThreads={flattenedPrefs.small_threads}
+				isFocused={focusedEventRowID === entry.rowid}
+				viewType={viewType}
+			/>)
+			prevEvt = entry
+		} else {
+			result.push(<CollapsedEvents
+				key={`group-${currentGroup[0].rowid}`}
+				events={currentGroup}
+				prevEvt={prevEvt}
+				smallReplies={flattenedPrefs.small_replies}
+				smallThreads={flattenedPrefs.small_threads}
+				focusedEventRowID={focusedEventRowID ?? null}
+				viewType={viewType}
+			/>)
+			prevEvt = currentGroup[currentGroup.length - 1]
+		}
+		currentGroup = []
+		receiptMergeIdx = 0
+	}
+
+	for (const entry of timeline) {
 		if (!entry) {
-			return null
+			continue
 		} else if (shouldHide(entry, flattenedPrefs)) {
 			if (prevEvt && viewType === "timeline" && flattenedPrefs.display_read_receipts) {
 				// Completely pointless optimization to avoid recreating the receipt_flattening array on every render
@@ -100,26 +161,33 @@ export function renderTimelineList(
 					receiptMergeIdx = null
 				}
 			}
-			return null
+			continue
 		}
-		if (
-			prevEvt?.receipt_flattening
-			&& receiptMergeIdx !== null
-			&& prevEvt.receipt_flattening.length > receiptMergeIdx
-		) {
-			prevEvt.receipt_flattening = prevEvt.receipt_flattening.slice(0, receiptMergeIdx)
+
+		if (isCollapsible(entry, flattenedPrefs)) {
+			currentGroup.push(entry)
+		} else {
+			flushGroup()
+			if (
+				prevEvt?.receipt_flattening
+				&& receiptMergeIdx !== null
+				&& prevEvt.receipt_flattening.length > receiptMergeIdx
+			) {
+				prevEvt.receipt_flattening = prevEvt.receipt_flattening.slice(0, receiptMergeIdx)
+			}
+			result.push(<TimelineEvent
+				key={entry.rowid}
+				evt={entry}
+				prevEvt={prevEvt}
+				smallReplies={flattenedPrefs.small_replies}
+				smallThreads={flattenedPrefs.small_threads}
+				isFocused={focusedEventRowID === entry.rowid}
+				viewType={viewType}
+			/>)
+			prevEvt = entry
+			receiptMergeIdx = 0
 		}
-		const thisEvt = <TimelineEvent
-			key={entry.rowid}
-			evt={entry}
-			prevEvt={prevEvt}
-			smallReplies={flattenedPrefs.small_replies}
-			smallThreads={flattenedPrefs.small_threads}
-			isFocused={focusedEventRowID === entry.rowid}
-			viewType={viewType}
-		/>
-		prevEvt = entry
-		receiptMergeIdx = 0
-		return thisEvt
-	})
+	}
+	flushGroup()
+	return result
 }

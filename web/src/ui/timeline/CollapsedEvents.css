@@ -1,0 +1,35 @@
+div.collapsed-events {
+	display: flex;
+	align-items: center;
+	padding: 0.5rem var(--timeline-horizontal-padding);
+	cursor: var(--clickable-cursor);
+	user-select: none;
+
+	&:hover {
+		background-color: var(--timeline-hover-bg-color);
+
+		> button.collapsed-events-button {
+			color: var(--primary-color);
+			border-color: var(--primary-color);
+		}
+	}
+
+	> div.collapsed-events-line {
+		flex: 1;
+		height: 1px;
+		background-color: var(--border-color);
+		opacity: 0.3;
+	}
+
+	> button.collapsed-events-button {
+		background: transparent;
+		border: 1px solid var(--border-color);
+		border-radius: 1rem;
+		padding: 0.2rem 1rem;
+		margin: 0 1rem;
+		font-size: 0.85rem;
+		color: var(--secondary-text-color);
+		pointer-events: none;
+		transition: all 0.2s;
+	}
+}

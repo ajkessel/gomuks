@@ -84,8 +84,12 @@ func (h *HiClient) RunBackfillQueue(ctx context.Context) {
 }
 
 func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff time.Time) {
-	log := zerolog.Ctx(ctx).With().Str("action", "backfill").Stringer("room_id", roomID).Logger()
-	log.Debug().Msg("Starting room history backfill")
+	log := zerolog.Ctx(ctx).With().
+		Str("action", "backfill").
+		Str("component", "sql").
+		Stringer("room_id", roomID).
+		Logger()
+	log.Info().Msg("Starting room history backfill")
 	pages := 0
 	busyAttempts := 0
 	for {
@@ -112,13 +116,13 @@ func (h *HiClient) backfillRoom(ctx context.Context, roomID id.RoomID, cutoff ti
 		pages++
 		log.Debug().Int("page", pages).Int("events", len(resp.Events)).Bool("has_more", resp.HasMore).Msg("Fetched backfill page")
 		if !resp.HasMore {
-			log.Debug().Int("pages", pages).Msg("Room history fully backfilled")
+			log.Info().Int("pages", pages).Msg("Room history fully backfilled")
 			return
 		}
 		if !cutoff.IsZero() && len(resp.Events) > 0 {
 			oldest := resp.Events[len(resp.Events)-1]
 			if oldest.Timestamp.Time.Before(cutoff) {
-				log.Debug().Int("pages", pages).Time("oldest_event", oldest.Timestamp.Time).Msg("Reached backfill cutoff date")
+				log.Info().Int("pages", pages).Time("oldest_event", oldest.Timestamp.Time).Msg("Reached backfill cutoff date")
 				return
 			}
 		}

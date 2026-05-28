@@ -789,7 +789,7 @@ func parseSearchQuery(raw string) (ftsQuery, senderName string, startTime, endTi
 	return
 }
 
-func (h *HiClient) SearchMessages(ctx context.Context, query string, roomID id.RoomID, includeDirect, includeEncrypted bool, limit, offset int) ([]*database.Event, error) {
+func (h *HiClient) SearchMessages(ctx context.Context, query string, roomID id.RoomID, includeDirect, includeEncrypted, includeNonMessages bool, limit, offset int) ([]*database.Event, error) {
 	if offset < 0 {
 		return nil, fmt.Errorf("search offset must not be negative")
 	}
@@ -802,7 +802,15 @@ func (h *HiClient) SearchMessages(ctx context.Context, query string, roomID id.R
 	if err != nil {
 		return nil, err
 	}
-	evts, err := h.DB.Event.Search(ctx, ftsQuery, senderName, roomID, includeDirect, includeEncrypted, startTime, endTime, limit, offset)
+	h.Log.Info().
+		Str("component", "sql").
+		Str("query", query).
+		Stringer("room_id", roomID).
+		Bool("include_direct", includeDirect).
+		Bool("include_encrypted", includeEncrypted).
+		Bool("include_non_messages", includeNonMessages).
+		Msg("Searching messages")
+	evts, err := h.DB.Event.Search(ctx, ftsQuery, senderName, roomID, includeDirect, includeEncrypted, includeNonMessages, startTime, endTime, limit, offset)
 	for _, evt := range evts {
 		h.ReprocessExistingEvent(ctx, evt)
 	}

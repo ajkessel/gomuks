@@ -94,6 +94,9 @@ const (
 		AND ($5 = 0 OR event.timestamp <= $5)
 		AND ($8 OR room.dm_user_id IS NULL)
 		AND ($9 OR room.encryption_event IS NULL)
+		AND ($10 OR (event.type IN ('m.room.message', 'm.sticker')
+		             OR (event.type = 'm.room.encrypted'
+		                 AND event.decrypted_type IN ('m.room.message', 'm.sticker'))))
 		ORDER BY event.timestamp DESC
 		LIMIT $6 OFFSET $7
 	`
@@ -108,7 +111,7 @@ const (
 	` + getEventBaseQuery + `
 		JOIN room ON event.room_id = room.room_id
 		WHERE (index_redacted() OR event.redacted_by IS NULL)
-		AND json_extract(COALESCE(event.decrypted, event.content), '$.body') IS NOT NULL
+		AND ($9 OR json_extract(COALESCE(event.decrypted, event.content), '$.body') IS NOT NULL)
 		AND ($1 = '' OR event.room_id IN (SELECT room_id FROM room_ids))
 		AND ($2 = '' OR event.sender IN (
 			SELECT DISTINCT state_key FROM event AS me
@@ -120,6 +123,9 @@ const (
 		AND ($4 = 0 OR event.timestamp <= $4)
 		AND ($7 OR room.dm_user_id IS NULL)
 		AND ($8 OR room.encryption_event IS NULL)
+		AND ($9 OR (event.type IN ('m.room.message', 'm.sticker')
+		             OR (event.type = 'm.room.encrypted'
+		                 AND event.decrypted_type IN ('m.room.message', 'm.sticker'))))
 		ORDER BY event.timestamp DESC
 		LIMIT $5 OFFSET $6
 	`
@@ -232,15 +238,15 @@ func escapeLike(s string) string {
 	return s
 }
 
-func (eq *EventQuery) Search(ctx context.Context, ftsQuery, senderName string, roomID id.RoomID, includeDirect, includeEncrypted bool, startTime, endTime int64, limit, offset int) ([]*Event, error) {
+func (eq *EventQuery) Search(ctx context.Context, ftsQuery, senderName string, roomID id.RoomID, includeDirect, includeEncrypted, includeNonMessages bool, startTime, endTime int64, limit, offset int) ([]*Event, error) {
 	if ftsQuery == "" && senderName == "" && startTime == 0 && endTime == 0 {
 		return nil, nil
 	}
 	escapedSender := escapeLike(senderName)
 	if ftsQuery != "" {
-		return eq.QueryMany(ctx, searchEventsQuery, normalizeFTSQuery(ftsQuery), string(roomID), escapedSender, startTime, endTime, limit, offset, includeDirect, includeEncrypted)
+		return eq.QueryMany(ctx, searchEventsQuery, normalizeFTSQuery(ftsQuery), string(roomID), escapedSender, startTime, endTime, limit, offset, includeDirect, includeEncrypted, includeNonMessages)
 	}
-	return eq.QueryMany(ctx, searchEventsNoFTSQuery, string(roomID), escapedSender, startTime, endTime, limit, offset, includeDirect, includeEncrypted)
+	return eq.QueryMany(ctx, searchEventsNoFTSQuery, string(roomID), escapedSender, startTime, endTime, limit, offset, includeDirect, includeEncrypted, includeNonMessages)
 }
 
 func (eq *EventQuery) GetByRowIDs(ctx context.Context, rowIDs ...EventRowID) ([]*Event, error) {

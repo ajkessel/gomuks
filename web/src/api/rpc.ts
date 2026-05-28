@@ -327,10 +327,11 @@ export default abstract class RPCClient {
 		room_id: RoomID | undefined = undefined,
 		include_direct: boolean = false,
 		include_encrypted: boolean = false,
+		include_non_messages: boolean = false,
 	): Promise<RawDBEvent[]> {
 		return this.request("search_messages", {
 			query, limit, offset, room_id,
-			include_direct, include_encrypted,
+			include_direct, include_encrypted, include_non_messages,
 		})
 	}
 

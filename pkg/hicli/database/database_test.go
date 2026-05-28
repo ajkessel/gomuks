@@ -68,7 +68,7 @@ func TestFTSIndexesRedactedEventsByDefault(t *testing.T) {
 	}
 
 	assertFTSMatchCount(t, ctx, db, "secret", 1)
-	events, err := db.Event.Search(ctx, "secret", "", "!room:example.com", true, true, 0, 0, 10, 0)
+	events, err := db.Event.Search(ctx, "secret", "", "!room:example.com", true, true, false, 0, 0, 10, 0)
 	if err != nil {
 		t.Fatalf("failed to search events: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestFTSCanExcludeRedactedEvents(t *testing.T) {
 
 	assertFTSMatchCount(t, ctx, db, "secret", 0)
 	assertFTSMatchCount(t, ctx, db, "visible", 1)
-	events, err := db.Event.Search(ctx, "secret", "", "!room:example.com", true, true, 0, 0, 10, 0)
+	events, err := db.Event.Search(ctx, "secret", "", "!room:example.com", true, true, false, 0, 0, 10, 0)
 	if err != nil {
 		t.Fatalf("failed to search events: %v", err)
 	}

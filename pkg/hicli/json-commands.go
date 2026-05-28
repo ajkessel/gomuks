@@ -317,7 +317,7 @@ func (h *JSONAPI) GetMentions(ctx context.Context, params *jsoncmd.GetMentionsPa
 }
 
 func (h *JSONAPI) SearchMessages(ctx context.Context, params *jsoncmd.SearchMessagesParams) ([]*database.Event, error) {
-	return nonNilArray(h.HiClient.SearchMessages(ctx, params.Query, params.RoomID, params.IncludeDirect, params.IncludeEncrypted, params.Limit, params.Offset))
+	return nonNilArray(h.HiClient.SearchMessages(ctx, params.Query, params.RoomID, params.IncludeDirect, params.IncludeEncrypted, params.IncludeNonMessages, params.Limit, params.Offset))
 }
 
 func (h *JSONAPI) GetRoomSummary(ctx context.Context, params *jsoncmd.GetRoomSummaryParams) (*mautrix.RespRoomSummary, error) {

@@ -185,6 +185,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 	const [roomScoped, setRoomScoped] = useState(initialRoomScoped)
 	const [includeDirect, setIncludeDirect] = useState(false)
 	const [includeEncrypted, setIncludeEncrypted] = useState(false)
+	const [includeNonMessages, setIncludeNonMessages] = useState(false)
 	const [resultRoomScoped, setResultRoomScoped] = useState(initialRoomScoped)
 	const [removeRedacted, setRemoveRedacted] = useState(false)
 	const viewRef = useRef<HTMLDivElement>(null)
@@ -200,7 +201,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		if (submittedQuery.trim()) {
 			setEvents([])
 			setHasMore(false)
-			runSearch(submittedQuery, scoped, includeDirect, includeEncrypted, 0, [])
+			runSearch(submittedQuery, scoped, includeDirect, includeEncrypted, includeNonMessages, 0, [])
 		}
 	}
 
@@ -221,12 +222,13 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		if (!initialQuery) {
 			return
 		}
-		runSearch(initialQuery, initialRoomScoped, includeDirect, includeEncrypted, 0, [])
+		runSearch(initialQuery, initialRoomScoped, includeDirect, includeEncrypted, includeNonMessages, 0, [])
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const runSearch = (
-		q: string, scoped: boolean, incDirect: boolean, incEncrypted: boolean, offset: number, existing: MemDBEvent[],
+		q: string, scoped: boolean, incDirect: boolean, incEncrypted: boolean,
+		incNonMessages: boolean, offset: number, existing: MemDBEvent[],
 	) => {
 		if (!q.trim()) {
 			return
@@ -241,6 +243,7 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 			roomID: scoped ? roomCtx?.store.roomID : undefined,
 			includeDirect: incDirect,
 			includeEncrypted: incEncrypted,
+			includeNonMessages: incNonMessages,
 			limit: BATCH_SIZE,
 			offset,
 		}).then(
@@ -257,11 +260,14 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 		setEvents([])
 		setHasMore(false)
 		setSubmittedQuery(query)
-		runSearch(query, roomScoped, includeDirect, includeEncrypted, 0, [])
+		runSearch(query, roomScoped, includeDirect, includeEncrypted, includeNonMessages, 0, [])
 	}
 
 	const loadMore = () => {
-		runSearch(submittedQuery, roomScoped, includeDirect, includeEncrypted, events.length, events)
+		runSearch(
+			submittedQuery, roomScoped, includeDirect,
+			includeEncrypted, includeNonMessages, events.length, events,
+		)
 	}
 
 	const getRoomName = (evt: MemDBEvent) =>
@@ -304,7 +310,10 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 							if (submittedQuery.trim()) {
 								setEvents([])
 								setHasMore(false)
-								runSearch(submittedQuery, roomScoped, e.target.checked, includeEncrypted, 0, [])
+								runSearch(
+									submittedQuery, roomScoped, e.target.checked,
+									includeEncrypted, includeNonMessages, 0, [],
+								)
 							}
 						}}
 					/>
@@ -319,12 +328,33 @@ const SearchPanel = ({ initialQuery = "", initialRoomScoped = true }: SearchPane
 							if (submittedQuery.trim()) {
 								setEvents([])
 								setHasMore(false)
-								runSearch(submittedQuery, roomScoped, includeDirect, e.target.checked, 0, [])
+								runSearch(
+									submittedQuery, roomScoped, includeDirect,
+									e.target.checked, includeNonMessages, 0, [],
+								)
 							}
 						}}
 					/>
 				</label>
 			</>}
+			<label title="Include non-message events like joins/leaves in results">
+				Include non-messages
+				<input
+					type="checkbox"
+					checked={includeNonMessages}
+					onChange={e => {
+						setIncludeNonMessages(e.target.checked)
+						if (submittedQuery.trim()) {
+							setEvents([])
+							setHasMore(false)
+							runSearch(
+								submittedQuery, roomScoped, includeDirect,
+								includeEncrypted, e.target.checked, 0, [],
+							)
+						}
+					}}
+				/>
+			</label>
 			{hasRedactedResults && <label>
 				Remove redacted
 				<input

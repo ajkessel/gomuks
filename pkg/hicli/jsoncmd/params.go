@@ -161,6 +161,8 @@ type SearchMessagesParams struct {
 	IncludeDirect bool `json:"include_direct"`
 	// Whether to include encrypted rooms in the search results (if not filtering by room ID).
 	IncludeEncrypted bool `json:"include_encrypted"`
+	// Whether to include non-message events (membership, power levels, etc.) in the search results.
+	IncludeNonMessages bool `json:"include_non_messages"`
 	// Maximum number of results to return.
 	Limit int `json:"limit"`
 	// Offset for pagination.

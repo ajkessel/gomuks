@@ -396,12 +396,16 @@ export default class Client {
 	}
 
 	async searchMessages({
-		query, roomID, limit = 50, offset = 0, includeDirect = false, includeEncrypted = false,
+		query, roomID, limit = 50, offset = 0,
+		includeDirect = false, includeEncrypted = false, includeNonMessages = false,
 	}: {
 		query: string, roomID?: RoomID, limit?: number, offset?: number,
-		includeDirect?: boolean, includeEncrypted?: boolean
+		includeDirect?: boolean, includeEncrypted?: boolean, includeNonMessages?: boolean
 	}) {
-		const resp = await this.rpc.searchMessages(query, limit, offset, roomID, includeDirect, includeEncrypted)
+		const resp = await this.rpc.searchMessages(
+			query, limit, offset, roomID,
+			includeDirect, includeEncrypted, includeNonMessages,
+		)
 		const output = []
 		for (const evt of resp) {
 			const room = this.store.rooms.get(evt.room_id)
